@@ -4,7 +4,7 @@
     <display-name>
       MailClientAdapter
     </display-name>
-    <description>description</description>
+    <description>adapter for Java Mail Client</description>
     <icon>
     	<small-icon>small-icon</small-icon>
     </icon>
@@ -14,11 +14,9 @@
     <spec-version>
       1.5
     </spec-version>
-    <eis-type>
-      MailClientAdapter
-    </eis-type>
+    <eis-type>Java Mail Client</eis-type>
     <version>
-      1.6
+      0.1
     </version>
     <resourceadapter>
       <managedconnectionfactory-class>
