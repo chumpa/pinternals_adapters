@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<AdapterTypeMetaData version="731">
+  <GuiHandlerClassName />
+
+  <Type>MailClientAdapter</Type>
+  <GuiLabels>
+    <Label language="EN">Mail adapter</Label>
+    <Label language="RU">Почтовый адаптер</Label>
+  </GuiLabels>
+
+  <DynamicAttributes>
+    <AttributeReference>
+      <ReferenceName>JCAChannelID</ReferenceName>
+    </AttributeReference>
+  </DynamicAttributes>
+
+  <Outbound><!-- Receiver -->
+    <TransportProtocol>
+      <Name>SMTP</Name>
+      <Version>7.1.0</Version>
+      <GuiLabels>
+        <Label language="EN">File System</Label>
+      </GuiLabels>
+      <ValidMessageProtocols>
+        <ProtocolIdentifier>
+          <Name>XML</Name>
+          <Version>1</Version>
+        </ProtocolIdentifier>
+      </ValidMessageProtocols>
+
+      <ChannelAttributes>
+      </ChannelAttributes>
+
+      <SecurityAttributes>
+      </SecurityAttributes>
+    </TransportProtocol>
+
+    <MessageProtocol>
+      <Name>XML</Name>
+      <Version>1</Version>
+      <GuiLabels>
+        <Label language="EN">XML1</Label>
+      </GuiLabels>
+      <SecurityAttributes>
+      </SecurityAttributes>
+
+      <ModuleProcessorAttributes>
+        <ModuleSequence>
+          <ModuleSequenceItem>
+            <Name>localejbs/ModuleProcessorExitBean</Name>
+            <Type>local</Type>
+            <Key>exit</Key>
+          </ModuleSequenceItem>
+        </ModuleSequence>
+        <ModuleConfig/>
+      </ModuleProcessorAttributes>
+    </MessageProtocol>
+
+    <GlobalChannelAttributes>
+      <AttributeGroup>
+        <Name>Status</Name>
+        <GuiLabels>
+          <Label language="EN">Adapter Status</Label>
+        </GuiLabels>
+        <AttributeReference>
+          <ReferenceName>adapterStatus</ReferenceName>
+        </AttributeReference>
+      </AttributeGroup>
+    </GlobalChannelAttributes>
+  </Outbound>
+
+  <Inbound><!-- Sender -->
+   <TransportProtocol>
+      <Name>IMAP</Name>
+      <Version>4</Version>
+      <GuiLabels>
+        <Label language="EN">IMAP</Label>
+      </GuiLabels>
+      <ValidMessageProtocols>
+        <ProtocolIdentifier>
+          <Name>XML</Name>
+          <Version>1</Version>
+        </ProtocolIdentifier>
+      </ValidMessageProtocols>
+      <ChannelAttributes>
+        <AttributeGroup>
+          <Name>MailSourceSource</Name>
+          <GuiLabels>
+            <Label language="EN">Mail Sourcing</Label>
+            <Label language="RU">Соединение с почтовым сервером</Label>
+          </GuiLabels>
+          <AttributeReference>
+            <ReferenceName>pollInterval</ReferenceName>
+          </AttributeReference>
+          <AttributeReference>
+            <ReferenceName>qos</ReferenceName>
+          </AttributeReference>
+        </AttributeGroup>
+
+      </ChannelAttributes>
+      <SecurityAttributes />
+    </TransportProtocol>
+
+    <MessageProtocol>
+      <Name>XML</Name>
+      <Version>1</Version>
+      <GuiLabels>
+        <Label language="EN">XML1</Label>
+      </GuiLabels>
+      <SecurityAttributes/>
+      <ModuleProcessorAttributes>
+        <ModuleSequence>
+          <ModuleSequenceItem>
+            <Name>localejbs/CallSapAdapter</Name>
+            <Type>local</Type>
+            <Key>exit</Key>
+          </ModuleSequenceItem>
+        </ModuleSequence>
+      </ModuleProcessorAttributes>
+    </MessageProtocol>
+
+    <GlobalChannelAttributes>
+      <AttributeGroup>
+        <Name>status</Name>
+        <GuiLabels>
+          <Label language="EN">Adapter Status</Label>
+        </GuiLabels>
+        <AttributeReference>
+          <ReferenceName>adapterStatus</ReferenceName>
+        </AttributeReference>
+      </AttributeGroup>
+    </GlobalChannelAttributes>
+  </Inbound>
+
+  <Attribute>
+    <Name>adapterStatus</Name>
+    <Usage>optional</Usage>
+    <Default>active</Default>
+    <DataType>xsd:string</DataType>
+    <Length>0</Length>
+    <GuiLabels>
+        <Label language="EN">Adapter Status</Label>
+    </GuiLabels>
+    <FixedValue>
+      <value>active</value>
+      <GuiLabels>
+        <Label language="EN">Active</Label>
+      </GuiLabels>
+    </FixedValue>
+    <FixedValue>
+      <value>inactive</value>
+      <GuiLabels>
+        <Label language="EN">Inactive</Label>
+      </GuiLabels>
+    </FixedValue>
+  </Attribute>
+
+  <Attribute>
+    <Name>pollInterval</Name>
+    <Usage>required</Usage>
+    <Default>60</Default>
+    <DataType>xsd:integer</DataType>
+    <Length>6</Length>
+    <GuiLabels>
+      <Label language="EN">poll interval (secs)</Label>
+    </GuiLabels>
+  </Attribute>
+
+  <Attribute>
+    <Name>qos</Name>
+    <Usage>required</Usage>
+    <Default>EO</Default>
+    <DataType>xsd:string</DataType>
+    <Length>0</Length>
+    <GuiLabels>
+      <Label language="EN">Message Quality of Service</Label>
+    </GuiLabels>
+    <FixedValue>
+      <value>EO</value>
+      <GuiLabels>
+        <Label language="EN">Exactly Once</Label>
+      </GuiLabels>
+    </FixedValue>
+    <FixedValue>
+      <value>EOIO</value>
+      <GuiLabels>
+        <Label language="EN">Exactly Once In Order</Label>
+      </GuiLabels>
+    </FixedValue>
+    <FixedValue>
+      <value>BE</value>
+      <GuiLabels>
+        <Label language="EN">Best Effort</Label>
+      </GuiLabels>
+    </FixedValue>
+  </Attribute>
+</AdapterTypeMetaData>

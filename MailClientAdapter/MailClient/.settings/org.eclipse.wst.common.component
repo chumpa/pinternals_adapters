@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project-modules id="moduleCoreId" project-version="1.5.0">
+    <wb-module deploy-name="MailClientAdapter">
+        <wb-resource deploy-path="/" source-path="/EarContent"/>
+        <dependent-module archiveName="MailClientAdapter.rar" deploy-path="/" handle="module:/resource/MailClientAdapter/MailClientAdapter">
+            <dependent-object>ConnectorModule_1408969606016</dependent-object>
+            <dependency-type>uses</dependency-type>
+        </dependent-module>
+        <dependent-module archiveName="pinternals_MailClientRA.rar" deploy-path="/" handle="module:/resource/pinternals_MailClientRA/pinternals_MailClientRA">
+            <dependent-object>ConnectorModule_1409224131995</dependent-object>
+            <dependency-type>uses</dependency-type>
+        </dependent-module>
+    </wb-module>
+</project-modules>
