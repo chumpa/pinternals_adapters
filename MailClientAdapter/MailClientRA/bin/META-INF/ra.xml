@@ -34,9 +34,7 @@
       <connection-impl-class>
         com.pinternals.mailclientadapter.CCIConnection
       </connection-impl-class>
-      <transaction-support>
-        NoTransaction
-      </transaction-support>
+      <transaction-support>NoTransaction</transaction-support>
       <config-property>
         <config-property-name>
           adapterType

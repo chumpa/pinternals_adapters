@@ -32,24 +32,24 @@ public class CCIConnectionFactory
     throws ResourceException
   {
     String SIGNATURE = "CciConnectionFactory()";
-    TRACE.entering("CciConnectionFactory()");
+    TRACE.entering(SIGNATURE);
     SPIManagedConnectionFactory smcf = new SPIManagedConnectionFactory();
     this.mcf = smcf;
     this.rf = new XIMessageFactoryImpl(smcf.getAdapterType(), smcf.getAdapterNamespace());
     this.cm = new SPIConnectionManager();
-    TRACE.exiting("CciConnectionFactory()");
+    TRACE.exiting(SIGNATURE);
   }
   
   public CCIConnectionFactory(ManagedConnectionFactory mcf)
     throws ResourceException
   {
     String SIGNATURE = "CciConnectionFactory(ManagedConnectionFactory mcf)";
-    TRACE.entering("CciConnectionFactory(ManagedConnectionFactory mcf)", new Object[] { mcf });
+    TRACE.entering(SIGNATURE, new Object[] { mcf });
     
     SPIManagedConnectionFactory smcf = null;
     if (mcf == null)
     {
-      TRACE.warningT("CciConnectionFactory(ManagedConnectionFactory mcf)", XIAdapterCategories.SERVER_JCA, "ManagedConnectionFactory was null, local instance created instead!");
+      TRACE.warningT(SIGNATURE, XIAdapterCategories.SERVER_JCA, "ManagedConnectionFactory was null, local instance created instead!");
       smcf = new SPIManagedConnectionFactory();
     }
     else
@@ -57,7 +57,7 @@ public class CCIConnectionFactory
       if (!(mcf instanceof SPIManagedConnectionFactory))
       {
         ResourceException re = new ResourceException("Received ManagedConnectionFactory is not the one of the sample adapter.");
-        TRACE.throwing("CciConnectionFactory(ManagedConnectionFactory mcf)", re);
+        TRACE.throwing(SIGNATURE, re);
         throw re;
       }
       smcf = (SPIManagedConnectionFactory)mcf;
@@ -65,19 +65,19 @@ public class CCIConnectionFactory
     this.mcf = smcf;
     this.rf = new XIMessageFactoryImpl(smcf.getAdapterType(), smcf.getAdapterNamespace());
     this.cm = new SPIConnectionManager();
-    TRACE.exiting("CciConnectionFactory(ManagedConnectionFactory mcf)");
+    TRACE.exiting(SIGNATURE);
   }
   
   public CCIConnectionFactory(ManagedConnectionFactory mcf, ConnectionManager cm)
     throws ResourceException
   {
     String SIGNATURE = "CciConnectionFactory(ManagedConnectionFactory mcf, ConnectionManager cm)";
-    TRACE.entering("CciConnectionFactory(ManagedConnectionFactory mcf, ConnectionManager cm)", new Object[] { mcf, cm });
+    TRACE.entering(SIGNATURE, new Object[] { mcf, cm });
     
     SPIManagedConnectionFactory smcf = null;
     if (mcf == null)
     {
-      TRACE.warningT("CciConnectionFactory(ManagedConnectionFactory mcf, ConnectionManager cm)", XIAdapterCategories.SERVER_JCA, "ManagedConnectionFactory was null, local instance created instead!");
+      TRACE.warningT(SIGNATURE, XIAdapterCategories.SERVER_JCA, "ManagedConnectionFactory was null, local instance created instead!");
       smcf = new SPIManagedConnectionFactory();
     }
     else
@@ -85,7 +85,7 @@ public class CCIConnectionFactory
       if (!(mcf instanceof SPIManagedConnectionFactory))
       {
         ResourceException re = new ResourceException("Received ManagedConnectionFactory is not the one of the sample adapter.");
-        TRACE.throwing("CciConnectionFactory(ManagedConnectionFactory mcf, ConnectionManager cm)", re);
+        TRACE.throwing(SIGNATURE, re);
         throw re;
       }
       smcf = (SPIManagedConnectionFactory)mcf;
@@ -94,24 +94,24 @@ public class CCIConnectionFactory
     this.rf = new XIMessageFactoryImpl(smcf.getAdapterType(), smcf.getAdapterNamespace());
     if (cm == null)
     {
-      TRACE.warningT("CciConnectionFactory(ManagedConnectionFactory mcf, ConnectionManager cm)", XIAdapterCategories.SERVER_JCA, "ConnectionManager was null, local instance created instead (two-tier)!");
+      TRACE.warningT(SIGNATURE, XIAdapterCategories.SERVER_JCA, "ConnectionManager was null, local instance created instead (two-tier)!");
       this.cm = new SPIConnectionManager();
     }
     else
     {
       this.cm = cm;
     }
-    TRACE.exiting("CciConnectionFactory(ManagedConnectionFactory mcf, ConnectionManager cm)");
+    TRACE.exiting(SIGNATURE);
   }
   
   public Connection getConnection()
     throws ResourceException
   {
     String SIGNATURE = "getConnection()";
-    TRACE.entering("getConnection()");
+    TRACE.entering(SIGNATURE);
     Connection con = null;
     con = (Connection)this.cm.allocateConnection(this.mcf, null);
-    TRACE.exiting("getConnection()");
+    TRACE.exiting(SIGNATURE);
     return con;
   }
   
@@ -119,22 +119,17 @@ public class CCIConnectionFactory
     throws ResourceException
   {
     String SIGNATURE = "getConnection(ConnectionSpec spec)";
-    TRACE.entering("getConnection(ConnectionSpec spec)", new Object[] { spec });
+    TRACE.entering(SIGNATURE, new Object[] { spec });
     if (!(spec instanceof XIConnectionSpec))
     {
       ResourceException re = new ResourceException("ConnectionSpec is not instance of CciConnectionSpec.");
-      TRACE.throwing("getConnection(ConnectionSpec spec)", re);
+      TRACE.throwing(SIGNATURE, re);
       throw re;
     }
     Connection con = null;
     ConnectionRequestInfo info = new CCIConnectionRequestInfo(((XIConnectionSpec)spec).getUserName(), ((XIConnectionSpec)spec).getPassword(), ((XIConnectionSpec)spec).getChannelId());
-    
-
-
-
     con = (Connection)this.cm.allocateConnection(this.mcf, info);
-    
-    TRACE.exiting("getConnection(ConnectionSpec spec)");
+    TRACE.exiting(SIGNATURE);
     return con;
   }
   
@@ -142,9 +137,9 @@ public class CCIConnectionFactory
     throws ResourceException
   {
     String SIGNATURE = "getMetaData()";
-    TRACE.entering("getMetaData()");
+    TRACE.entering(SIGNATURE);
     CCIResourceAdapterMetaData meta = new CCIResourceAdapterMetaData();
-    TRACE.exiting("getMetaData()");
+    TRACE.exiting(SIGNATURE);
     return meta;
   }
   
@@ -157,9 +152,9 @@ public class CCIConnectionFactory
   public void setReference(Reference ref)
   {
     String SIGNATURE = "setReference()";
-    TRACE.entering("setReference()", new Object[] { ref });
+    TRACE.entering(SIGNATURE, new Object[] { ref });
     this.reference = ref;
-    TRACE.exiting("setReference()");
+    TRACE.exiting(SIGNATURE);
   }
   
   public Reference getReference()

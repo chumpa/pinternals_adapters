@@ -5,4 +5,5 @@
 <Property key="j2ee.archive.name" value="pinternals_MailClientAdapter.ear"/>
 <Property key="j2ee.archive.location" value="/"/>
 </Properties>
+<ExternalProjects/>
 </TSSAP-INFO>
