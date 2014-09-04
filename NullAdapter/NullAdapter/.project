@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<projectDescription>
+	<name>NullAdapter</name>
+	<comment></comment>
+	<projects>
+		<project>NullRA</project>
+	</projects>
+	<buildSpec>
+		<buildCommand>
+			<name>org.eclipse.wst.common.project.facet.core.builder</name>
+			<arguments>
+			</arguments>
+		</buildCommand>
+		<buildCommand>
+			<name>org.eclipse.wst.validation.validationbuilder</name>
+			<arguments>
+			</arguments>
+		</buildCommand>
+		<buildCommand>
+			<name>com.sap.tc.jtools.jlin.ui.jlinbuilder</name>
+			<arguments>
+			</arguments>
+		</buildCommand>
+	</buildSpec>
+	<natures>
+		<nature>com.sap.ide.j2ee.adapter.ear.earNature</nature>
+		<nature>com.sap.ide.j2ee.adapter.ext.ear.earNature</nature>
+		<nature>com.sap.ide.j2ee.adapter.ext.ear.ArchiveProjectNature</nature>
+		<nature>org.eclipse.wst.common.project.facet.core.nature</nature>
+		<nature>org.eclipse.wst.common.modulecore.ModuleCoreNature</nature>
+	</natures>
+</projectDescription>
