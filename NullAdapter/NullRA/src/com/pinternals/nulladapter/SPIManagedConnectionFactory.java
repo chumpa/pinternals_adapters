@@ -11,57 +11,68 @@ import javax.resource.spi.ManagedConnection;
 import javax.resource.spi.ManagedConnectionFactory;
 import javax.security.auth.Subject;
 
+import com.sap.aii.af.lib.trace.Trace;
 import com.sap.engine.interfaces.connector.ManagedConnectionFactoryActivation;
 
 @SuppressWarnings("deprecation")
-public class SPIManagedConnectionFactory implements ManagedConnectionFactory, Serializable, ManagedConnectionFactoryActivation {
-
+public class SPIManagedConnectionFactory implements ManagedConnectionFactory, Serializable,
+		ManagedConnectionFactoryActivation {
+	private static ResourceException unsupported = new ResourceException("Unsupported method");
 	private static final long serialVersionUID = 2197753211101170823L;
+	private AdapterManager mgr = null;
+	public static final Trace TRACE = new Trace(SPIManagedConnectionFactory.class.getName());
 
 	@Override
 	public Object createConnectionFactory() throws ResourceException {
-		// TODO Auto-generated method stub
-		return null;
+		throw unsupported;
 	}
 
 	@Override
-	public Object createConnectionFactory(ConnectionManager var1) throws ResourceException {
-		// TODO Auto-generated method stub
-		return null;
+	public Object createConnectionFactory(ConnectionManager cm) throws ResourceException {
+		String SIGNATURE = "createConnectionFactory(ConnectionManager cm)";
+		TRACE.entering(SIGNATURE, new Object[] { cm });
+		CCIConnectionFactory factory = new CCIConnectionFactory(this, cm);
+		TRACE.exiting(SIGNATURE);
+		return factory;
 	}
 
 	@Override
-	public ManagedConnection createManagedConnection(Subject var1, ConnectionRequestInfo var2) throws ResourceException {
-		// TODO Auto-generated method stub
-		return null;
+	public ManagedConnection createManagedConnection(Subject x, ConnectionRequestInfo y) throws ResourceException {
+		throw unsupported;
 	}
 
 	@Override
 	public PrintWriter getLogWriter() throws ResourceException {
-		return null;
+		throw unsupported;
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
-	public ManagedConnection matchManagedConnections(Set var1, Subject var2, ConnectionRequestInfo var3)
+	public ManagedConnection matchManagedConnections(Set x, Subject y, ConnectionRequestInfo z)
 			throws ResourceException {
-		// TODO Auto-generated method stub
-		return null;
+		throw unsupported;
 	}
 
 	@Override
 	public void setLogWriter(PrintWriter var1) throws ResourceException {
+		throw unsupported;
 	}
 
 	@Override
 	public void start() {
-		// TODO Auto-generated method stub
-		
+		String SIGNATURE = "start()";
+		TRACE.entering(SIGNATURE);
+		mgr = new AdapterManager();
+		mgr.start();
+		TRACE.exiting(SIGNATURE);
 	}
 
 	@Override
 	public void stop() {
-		// TODO Auto-generated method stub
-		
+		String SIGNATURE = "stop()";
+		TRACE.entering(SIGNATURE);
+		mgr.stop();
+		TRACE.exiting(SIGNATURE);
 	}
 
 }
