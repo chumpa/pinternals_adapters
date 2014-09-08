@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6"/>
+
+	<classpathentry kind="var" path="ECLIPSE_HOME/plugins/org.eclipse.equinox.common_3.5.1.R35x_v20090807-1100.jar"/>
+	<classpathentry kind="var" path="ECLIPSE_HOME/plugins/org.eclipse.core.jobs_3.4.100.v20090429-1800.jar"/>
+	<classpathentry kind="var" path="ECLIPSE_HOME/plugins/org.eclipse.core.resources_3.5.2.R35x_v20091203-1235.jar"/>
+	<classpathentry kind="var" path="ECLIPSE_HOME/plugins/org.eclipse.core.runtime_3.5.0.v20090525.jar"/>
+
+	<classpathentry kind="var" path="ECLIPSE_HOME/plugins/com.sap.ide.j2ee.servicelayer_1.0.1.140716065214.jar"/>
+	<classpathentry kind="var" path="ECLIPSE_HOME/plugins/com.sap.ide.j2ee.adapter.ext.ra_1.0.1.140716065214.jar"/>
+	<classpathentry kind="var" path="ECLIPSE_HOME/plugins/com.sap.ide.j2ee.extensionpoints_1.0.1.140716065214.jar"/>
+	<classpathentry kind="var" path="ECLIPSE_HOME/plugins/com.sap.ide.j2ee.util_1.0.1.140716065214.jar"/>
+	<classpathentry kind="var" path="ECLIPSE_HOME/plugins/com.sap.ide.j2ee.adapter.web_1.0.1.140716065214.jar"/>
+
+	<classpathentry kind="var" path="ECLIPSE_HOME/plugins/com.tssap.util.core_2.0.0.140716065214.jar"/>
+	<classpathentry kind="var" path="ECLIPSE_HOME/plugins/com.tssap.util.trace_1.0.0.140716065214.jar"/>
+	<classpathentry kind="var" path="ECLIPSE_HOME/plugins/com.tssap.tools_2.0.0.140716065214/lib/com.tssap.tools_api.jar"/>
+	<classpathentry kind="var" path="ECLIPSE_HOME/plugins/com.tssap.util.sdk.ui_2.0.0.140716065214/lib/com.tssap.util.sdk.ui_api.jar"/>
+
+	<classpathentry kind="var" path="ECLIPSE_HOME/plugins/com.sap.ide.j2ee.adapter.core_1.0.1.140716065214.jar"/>
+	<classpathentry kind="var" path="ECLIPSE_HOME/plugins/com.sap.ide.eclipse.jarsap_2.0.0.140716065214/lib/com.sap.ide.eclipse.jarsap_api.jar"/>
+	<classpathentry kind="var" path="ECLIPSE_HOME/plugins/com.sap.ide.j2ee.adapter.ear_1.0.1.140716065214.jar"/>
+
+	<classpathentry kind="var" path="ECLIPSE_HOME/plugins/com.sap.ide.j2ee.adapter.client_1.0.1.140716065214.jar"/>
+	<classpathentry kind="var" path="ECLIPSE_HOME/plugins/com.sap.ide.j2ee.adapter.ejb_1.0.1.140716065214.jar"/>
+	<classpathentry kind="var" path="ECLIPSE_HOME/plugins/com.sap.ide.j2ee.adapter.ext.client_1.0.1.140716065214.jar"/>
+	<classpathentry kind="var" path="ECLIPSE_HOME/plugins/com.sap.ide.j2ee.adapter.ext.cmpejb_1.0.1.140716065214.jar"/>
+	<classpathentry kind="var" path="ECLIPSE_HOME/plugins/com.sap.ide.j2ee.adapter.ext.core_1.0.1.140716065214.jar"/>
+	<classpathentry kind="var" path="ECLIPSE_HOME/plugins/com.sap.ide.j2ee.adapter.ext.ear_1.0.1.140716065214.jar"/>
+	<classpathentry kind="var" path="ECLIPSE_HOME/plugins/com.sap.ide.j2ee.adapter.ext.ejb_1.0.1.140716065214.jar"/>
+	<classpathentry kind="var" path="ECLIPSE_HOME/plugins/com.sap.ide.j2ee.adapter.ext.web_1.0.1.140716065214.jar"/>
+	<classpathentry kind="var" path="ECLIPSE_HOME/plugins/com.sap.ide.j2ee.adapter.ra_1.0.1.140716065214.jar"/>
+	<classpathentry kind="var" path="ECLIPSE_HOME/plugins/com.sap.ide.j2ee.ui_1.0.1.140901072036.jar"/>
+
+
+	<classpathentry kind="var" path="ECLIPSE_HOME/plugins/org.eclipse.jdt.core_3.5.2.v_981_R35x.jar"/>
+	<classpathentry kind="var" path="ECLIPSE_HOME/plugins/org.eclipse.jst.j2ee_1.1.302.v201004131604.jar"/>
+	<classpathentry kind="var" path="ECLIPSE_HOME/plugins/org.eclipse.jem.workbench_2.0.201.v200911302230.jar"/>
+	<classpathentry kind="var" path="ECLIPSE_HOME/plugins/org.eclipse.jem.util_2.0.201.v201001252130.jar"/>
+	<classpathentry kind="var" path="ECLIPSE_HOME/plugins/org.eclipse.ui.workbench_3.5.2.M20100113-0800.jar"/>
+	<classpathentry kind="var" path="ECLIPSE_HOME/plugins/org.eclipse.jst.j2ee.core_1.1.301.v200911302230.jar"/>
+	<classpathentry kind="var" path="ECLIPSE_HOME/plugins/org.eclipse.jface_3.5.2.M20100120-0800.jar"/>
+	<classpathentry kind="var" path="ECLIPSE_HOME/plugins/org.eclipse.ltk.core.refactoring_3.5.0.v20090513-2000.jar"/>
+
+	<classpathentry kind="var" path="ECLIPSE_HOME/plugins/org.eclipse.wst.common.modulecore_1.1.301.v201001252130.jar"/>
+	<classpathentry kind="var" path="ECLIPSE_HOME/plugins/org.eclipse.wst.common.project.facet.core_1.4.1.v200911141735.jar"/>
+
+	<classpathentry kind="output" path="bin"/>
+</classpath>

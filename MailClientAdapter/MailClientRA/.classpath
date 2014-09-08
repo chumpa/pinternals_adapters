@@ -13,6 +13,8 @@
 	</classpathentry>
 	<classpathentry kind="con" path="org.eclipse.jst.j2ee.internal.module.container"/>
 	<classpathentry kind="con" path="com.sap.ext.libs.xpi.classpathContainer/adapter"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/SAP_USER_ADD_LIBS"/>
+	<classpathentry kind="con" path="sap.jee5"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/SAP_NWDS_EXTRA"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/SAP_USER_ADD_LIBS_MIN"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

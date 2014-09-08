@@ -7,6 +7,7 @@
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.Locale;
 
 import javax.naming.InitialContext;
 
@@ -19,18 +20,17 @@ import com.sap.aii.af.service.administration.api.cpa.CPAFactory;
 import com.sap.aii.af.service.administration.api.cpa.CPALookupManager;
 import com.sap.aii.af.service.administration.api.cpa.ChannelLifecycleCallback;
 import com.sap.aii.af.service.administration.api.i18n.LocalizationCallback;
+import com.sap.aii.af.service.administration.api.i18n.LocalizationNotPossibleException;
 import com.sap.aii.af.service.administration.api.i18n.ResourceBundleLocalizationCallback;
 import com.sap.aii.af.service.cpa.Channel;
 import com.sap.aii.af.service.resource.SAPAdapterResources;
 
 public class AFUtil {
-	private static LocalizationCallback localizer = null;
 	public static String NS = "urn:pinternals-adapters", T = "NullAdapter";
 	static AdapterRegistry ar = AdapterRegistryFactory.getInstance().getAdapterRegistry();
 	public static void registerAdapter(ChannelLifecycleCallback cb) {
 		AdapterCapability[] cp = {AdapterCapability.PUSH_CHANNEL_STATUS, AdapterCapability.PUSH_PROCESS_STATUS};
 		ar.registerAdapter(NS, T, cp, new AdapterCallback[] {cb});
-		localizer = XILocalizationUtilities.getLocalizationCallback();
 	}
 	public static void unregisterAdapter(ChannelLifecycleCallback cb) {
 		AdapterCapability[] cp = {AdapterCapability.PUSH_CHANNEL_STATUS, AdapterCapability.PUSH_PROCESS_STATUS};
@@ -38,10 +38,11 @@ public class AFUtil {
 	}
 }
 
-class AdapterManager implements ChannelLifecycleCallback {
+class AdapterManager implements ChannelLifecycleCallback, LocalizationCallback {
 	private static AdapterManager manager = null;
 	private Hashtable<Object,Object> adapterList = null;
 	private SAPAdapterResources resources = null;
+	private LocalizationCallback localizer = null;
 
 	// // private ModuleProcessorEngine engine;
 	// private ThreadDispatcher dispatcher;
@@ -63,6 +64,7 @@ class AdapterManager implements ChannelLifecycleCallback {
 
 	public AdapterManager() {
 		this.adapterList = new Hashtable<Object,Object>();
+		this.localizer = XILocalizationUtilities.getLocalizationCallback();
 		// String SIGNATURE = "AdapterManager(ApplicationServiceContext)";
 		// TRACE.entering("AdapterManager(ApplicationServiceContext)", new Object[0]);
 		// TRACE.exiting("AdapterManager(ApplicationServiceContext)");
@@ -581,6 +583,11 @@ class AdapterManager implements ChannelLifecycleCallback {
 //			}
 //		}
 //	}
+
+	@Override
+	public String localizeString(String str, Locale locale) throws LocalizationNotPossibleException {
+	      return localizer.localizeString(str, locale);
+	}
 }
 
 class XILocalizationUtilities {

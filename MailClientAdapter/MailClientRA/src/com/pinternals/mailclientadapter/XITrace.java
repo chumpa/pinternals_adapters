@@ -129,7 +129,7 @@ public class XITrace {
 	}
 
 	@SuppressWarnings("deprecation")
-	public void infoT(String signature, Category category, String msg, Object ... args) {
+	public void infoT(String signature, Category category, String msg, Object[]  args) {
 		if (this.location != null) {
 			if (category != null) {
 				this.location.infoT(category, signature, msg, args);
@@ -321,7 +321,7 @@ public class XITrace {
 	}
 
 	public void fatalT(String SIGNATURE, Category category, String messageID, String msg,
-			Object... args) {
+			Object[] args) {
 		if (this.location != null) {
 			Location subloc = Location.getLocation(this.location, SIGNATURE);
 			if (category != null) {
