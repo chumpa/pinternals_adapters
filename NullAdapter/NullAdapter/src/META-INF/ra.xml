@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE connector PUBLIC '-//Sun Microsystems, Inc.//DTD Connector 1.0//EN' 'http://java.sun.com/dtd/connector_1_0.dtd'>
 <connector>
-  <display-name>NullAdapter</display-name>
-  <description>adapter for Java Mail Client</description>
+  <display-name>Null</display-name>
+  <description>Null adapter</description>
   <icon>
     <small-icon>small-icon</small-icon>
  </icon>

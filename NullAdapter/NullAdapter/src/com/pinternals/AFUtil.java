@@ -3,7 +3,7 @@ package com.pinternals;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
-import com.pinternals.nulladapter.MCAConstants;
+import com.pinternals.nulladapter.AdapterConstants;
 import com.pinternals.nulladapter.XITrace;
 import com.sap.aii.af.service.cpa.Channel;
 import com.sap.aii.af.service.resource.SAPAdapterResources;
@@ -30,7 +30,7 @@ public class AFUtil {
 	public void getLocalGuid(XITrace trace, String signature) {
 		mcfLocalGuid = new GUID();
 		String x = "!!Started, localGuid=" + mcfLocalGuid.toString() + " " + mcfLocalGuid.toHexString();
-		trace.infoT(signature, MCAConstants.LogCategoryCONNECT_AF, x);
+		trace.infoT(signature, AdapterConstants.LogCategoryCONNECT_AF, x);
 		
 //		TODO: try {
 //		} catch (Exception e) {

@@ -40,8 +40,6 @@ import com.sap.engine.interfaces.messaging.api.auditlog.AuditLogStatus;
 
 public class CCIInteraction implements XIInteraction {
 	private static final XITrace TRACE = new XITrace(CCIInteraction.class.getName());
-	// private static final String ADDR_AGENCY_EAN = "009";
-	// private static final String ADDR_SCHEMA_GLN = "GLN";
 	private Connection connection;
 	private XIMessageFactoryImpl mf = null;
 	private SPIManagedConnection mc = null;
@@ -103,7 +101,7 @@ public class CCIInteraction implements XIInteraction {
 			callerOutput.setRecordShortDescription(localOutput.getRecordShortDescription());
 		} catch (Exception e) {
 			TRACE.catching(SIGNATURE, e);
-			TRACE.errorT(SIGNATURE, MCAConstants.LogCategoryConnect, "SOA.apt_sample.0002", "Exception during output record transfer. Reason: {0}", new Object[] { e.getMessage() });
+			TRACE.errorT(SIGNATURE, AdapterConstants.LogCategoryConnect, "SOA.apt_sample.0002", "Exception during output record transfer. Reason: {0}", new Object[] { e.getMessage() });
 			ResourceException re = new ResourceException("Output record cannot be filled. Reason: " + e.getMessage());
 			TRACE.throwing(SIGNATURE, re);
 			throw re;
@@ -208,7 +206,7 @@ public class CCIInteraction implements XIInteraction {
 		Payload appPayLoad = msg.getDocument();
 		String payText = new String(appPayLoad.getContent());
 		if (payText.indexOf("<DeliveryException>") != -1) {
-			TRACE.debugT(SIGNATURE, MCAConstants.LogCategoryConnect, "Payload contains the <DeliverableException> tag "
+			TRACE.debugT(SIGNATURE, AdapterConstants.LogCategoryConnect, "Payload contains the <DeliverableException> tag "
 					+ "that causes a XIDeliveryException for testing purposes!");
 			XIAdapterException de = new XIAdapterException("XI AF JCA sample ra cannot deliver the message (test)");
 			this.audit.addAuditLogEntry(amk, AuditLogStatus.ERROR, "Payload contains the <DeliverableException> tag that causes "
@@ -218,7 +216,7 @@ public class CCIInteraction implements XIInteraction {
 			throw de;
 		}
 		if (payText.indexOf("<RecoverableException>") != -1) {
-			TRACE.debugT(SIGNATURE, MCAConstants.LogCategoryConnect, "Payload contains the <RecoverableException> tag that causes a"
+			TRACE.debugT(SIGNATURE, AdapterConstants.LogCategoryConnect, "Payload contains the <RecoverableException> tag that causes a"
 					+ " XIRecoverableException for testing purposes!");
 			XIAdapterException re = new XIAdapterException("XI AF JCA sample ra cannot temporarily deliver the message (test)");
 			this.audit.addAuditLogEntry(amk, AuditLogStatus.ERROR, "Payload contains the <RecoverableException> tag that causes a"
@@ -228,12 +226,12 @@ public class CCIInteraction implements XIInteraction {
 			throw re;
 		}
 		if (payText.indexOf("<FatalTraceOn>") != -1) {
-			TRACE.fatalT(SIGNATURE, MCAConstants.LogCategoryCONNECT_AF, "SOA.apt_sample.0050", "Ignore this and the following trace messages in the method send()."
+			TRACE.fatalT(SIGNATURE, AdapterConstants.LogCategoryCONNECT_AF, "SOA.apt_sample.0050", "Ignore this and the following trace messages in the method send()."
 					+ " It is just a sample for using the trace API!");
 
-			TRACE.fatalT(SIGNATURE, MCAConstants.LogCategoryCONNECT_AF, "SOA.apt_sample.0051", "A fatal trace message with signature, category and text");
+			TRACE.fatalT(SIGNATURE, AdapterConstants.LogCategoryCONNECT_AF, "SOA.apt_sample.0051", "A fatal trace message with signature, category and text");
 
-			TRACE.fatalT(SIGNATURE, MCAConstants.LogCategoryCONNECT_AF, "SOA.apt_sample.0052", "A fatal trace message with signature, category, text and {0}.", new Object[] { "parameters" });
+			TRACE.fatalT(SIGNATURE, AdapterConstants.LogCategoryCONNECT_AF, "SOA.apt_sample.0052", "A fatal trace message with signature, category, text and {0}.", new Object[] { "parameters" });
 
 			TRACE.fatalT(SIGNATURE, "SOA.apt_sample.0053", "A fatal trace message with signature and text only");
 
@@ -259,10 +257,10 @@ public class CCIInteraction implements XIInteraction {
 
 			messageIDMapper.createIDMap(jcaMessageId, extMsgId, System.currentTimeMillis() + 86400000L, false);
 
-			TRACE.debugT(SIGNATURE, MCAConstants.LogCategoryConnect, "Lookup of {0} returns: {1}", new Object[] {
+			TRACE.debugT(SIGNATURE, AdapterConstants.LogCategoryConnect, "Lookup of {0} returns: {1}", new Object[] {
 					jcaMessageId, messageIDMapper.getMappedId(jcaMessageId) });
 
-			TRACE.debugT(SIGNATURE, MCAConstants.LogCategoryConnect, "Lookup of {0} returns: {1}", new Object[] {
+			TRACE.debugT(SIGNATURE, AdapterConstants.LogCategoryConnect, "Lookup of {0} returns: {1}", new Object[] {
 					extMsgId, messageIDMapper.getMappedId(extMsgId) });
 
 			messageIDMapper.remove(jcaMessageId);
@@ -278,7 +276,7 @@ public class CCIInteraction implements XIInteraction {
 		this.audit.flushAuditLogEntries(amk);
 
 		MessageKey msgKey = msg.getMessageKey();
-		TRACE.debugT(SIGNATURE, MCAConstants.LogCategoryConnect, "Message key {0} with this data received: ID: {1} Direction: {2}", new Object[] {
+		TRACE.debugT(SIGNATURE, AdapterConstants.LogCategoryConnect, "Message key {0} with this data received: ID: {1} Direction: {2}", new Object[] {
 				msgKey.toString(), msgKey.getMessageId(), msgKey.getDirection().toString() });
 		if (payText.indexOf("<AppAckOn>") == -1) {
 			try {
@@ -286,7 +284,7 @@ public class CCIInteraction implements XIInteraction {
 				this.mf.ackNotSupported(msgKey, notSupportedAcks);
 			} catch (Exception e) {
 				TRACE.catching(SIGNATURE, e);
-				TRACE.warningT(SIGNATURE, MCAConstants.LogCategoryConnect, "Not supported Acks cannot be published!");
+				TRACE.warningT(SIGNATURE, AdapterConstants.LogCategoryConnect, "Not supported Acks cannot be published!");
 			}
 		} else {
 			this.mf.applicationAck(msgKey);
@@ -310,18 +308,18 @@ public class CCIInteraction implements XIInteraction {
 		ServiceIdentifier fromServiceIdentifier = null;
 		ServiceIdentifier toServiceIdentifier = null;
 		try {
-			TRACE.debugT(SIGNATURE, MCAConstants.LogCategoryConnect, "Get receiver agreement with OutboundRuntimeLookup now.");
+			TRACE.debugT(SIGNATURE, AdapterConstants.LogCategoryConnect, "Get receiver agreement with OutboundRuntimeLookup now.");
 			CPAOutboundRuntimeLookupManager outLookup = CPAFactory.getInstance().createOutboundRuntimeLookupManager(this.mcf.getAdapterType(), this.mcf.getAdapterNamespace(), msg.getFromParty().toString(), msg.getToParty().toString(), msg.getFromService().toString(), msg.getToService().toString(), msg.getAction().getName(), msg.getAction().getType());
 
 			Binding binding = outLookup.getBinding();
 
-			TRACE.debugT(SIGNATURE, MCAConstants.LogCategoryConnect, "Get receiver agreement for channel ID {0} now.", new Object[] { channelID });
+			TRACE.debugT(SIGNATURE, AdapterConstants.LogCategoryConnect, "Get receiver agreement for channel ID {0} now.", new Object[] { channelID });
 			Binding bindingByChannel = CPAFactory.getInstance().getLookupManager().getBindingByChannelId(channelID);
 			// readSampleConfiguration(outLookup, bindingByChannel);
 			Channel channelFromBinding = outLookup.getChannel();
 			byte[] rawHeaderMappingData = outLookup.getHeaderMappingConfig();
 
-			TRACE.debugT(SIGNATURE, MCAConstants.LogCategoryConnect, "Get header mappings for message with ID {0} and receiver agreement with ID {1} now.", new Object[] {
+			TRACE.debugT(SIGNATURE, AdapterConstants.LogCategoryConnect, "Get header mappings for message with ID {0} and receiver agreement with ID {1} now.", new Object[] {
 					msg.getMessageId(), binding.getObjectId() });
 			try {
 				HeaderMapper hm = new HeaderMapper();
@@ -329,23 +327,23 @@ public class CCIInteraction implements XIInteraction {
 				Map mappedFields = HeaderMapper.getMappedHeader(msg, binding);
 				if ((mappedFields != null) && (!mappedFields.isEmpty())) {
 					if ((fromParty = (String) mappedFields.get(HeaderMapper.FROM_PARTY)) != null) {
-						TRACE.debugT(SIGNATURE, MCAConstants.LogCategoryConnect, "Header mapping: From party {0} is mapped to {1}", new Object[] {
+						TRACE.debugT(SIGNATURE, AdapterConstants.LogCategoryConnect, "Header mapping: From party {0} is mapped to {1}", new Object[] {
 								msg.getFromParty().toString(), fromParty });
 					}
 					if ((fromService = (String) mappedFields.get(HeaderMapper.FROM_SERVICE)) != null) {
-						TRACE.debugT(SIGNATURE, MCAConstants.LogCategoryConnect, "Header mapping: From service {0} is mapped to {1}", new Object[] {
+						TRACE.debugT(SIGNATURE, AdapterConstants.LogCategoryConnect, "Header mapping: From service {0} is mapped to {1}", new Object[] {
 								msg.getFromService().toString(), fromService });
 					}
 					if ((toParty = (String) mappedFields.get(HeaderMapper.TO_PARTY)) != null) {
-						TRACE.debugT(SIGNATURE, MCAConstants.LogCategoryConnect, "Header mapping: To party {0} is mapped to {1}", new Object[] {
+						TRACE.debugT(SIGNATURE, AdapterConstants.LogCategoryConnect, "Header mapping: To party {0} is mapped to {1}", new Object[] {
 								msg.getToParty().toString(), toParty });
 					}
 					if ((toService = (String) mappedFields.get(HeaderMapper.TO_SERVICE)) != null) {
-						TRACE.debugT(SIGNATURE, MCAConstants.LogCategoryConnect, "Header mapping: To service {0} is mapped to {1}", new Object[] {
+						TRACE.debugT(SIGNATURE, AdapterConstants.LogCategoryConnect, "Header mapping: To service {0} is mapped to {1}", new Object[] {
 								msg.getToService().toString(), toService });
 					}
 				} else {
-					TRACE.debugT(SIGNATURE, MCAConstants.LogCategoryConnect, "Header mapping is not defined for receiver agreement: {0}", new Object[] { binding.getStringRepresentation() });
+					TRACE.debugT(SIGNATURE, AdapterConstants.LogCategoryConnect, "Header mapping is not defined for receiver agreement: {0}", new Object[] { binding.getStringRepresentation() });
 				}
 			} catch (HeaderMappingException he) {
 				TRACE.catching(SIGNATURE, he);
@@ -353,7 +351,7 @@ public class CCIInteraction implements XIInteraction {
 			}
 		} catch (Exception e) {
 			TRACE.catching(SIGNATURE, e);
-			TRACE.errorT(SIGNATURE, MCAConstants.LogCategoryConnect, "SOA.apt_sample.0004", "Exception during header mapping. Reason: {0}. Error will be ignored.", new Object[] { e.getMessage() });
+			TRACE.errorT(SIGNATURE, AdapterConstants.LogCategoryConnect, "SOA.apt_sample.0004", "Exception during header mapping. Reason: {0}. Error will be ignored.", new Object[] { e.getMessage() });
 		}
 		if (fromParty == null) {
 			fromParty = msg.getFromParty().toString();
@@ -368,48 +366,48 @@ public class CCIInteraction implements XIInteraction {
 			toService = msg.getToService().toString();
 		}
 		try {
-			TRACE.debugT(SIGNATURE, MCAConstants.LogCategoryConnect, "Access the normalization manager now.");
+			TRACE.debugT(SIGNATURE, AdapterConstants.LogCategoryConnect, "Access the normalization manager now.");
 			NormalizationManager normalizer = NormalizationManager.getInstance();
 
 			fromServiceIdentifier = normalizer.getAlternativeServiceIdentifier(fromParty, fromService, "GLN");
 			if ((fromServiceIdentifier != null) && (fromServiceIdentifier.getServiceIdentifier() != null)
 					&& (fromServiceIdentifier.getServiceIdentifier().length() > 0)) {
-				TRACE.debugT(SIGNATURE, MCAConstants.LogCategoryConnect, "Address normalization for service: {0} is: {1}", new Object[] {
+				TRACE.debugT(SIGNATURE, AdapterConstants.LogCategoryConnect, "Address normalization for service: {0} is: {1}", new Object[] {
 						fromService, fromServiceIdentifier.getServiceIdentifier() });
 				fromService = fromServiceIdentifier.getServiceIdentifier();
 			} else {
-				TRACE.debugT(SIGNATURE, MCAConstants.LogCategoryConnect, "Address normalization is not defined for service: {0}", new Object[] { fromService });
+				TRACE.debugT(SIGNATURE, AdapterConstants.LogCategoryConnect, "Address normalization is not defined for service: {0}", new Object[] { fromService });
 			}
 			fromPartyIdentifier = normalizer.getAlternativePartyIdentifier("009", "GLN", fromParty);
 			if ((fromPartyIdentifier != null) && (fromPartyIdentifier.getParty() != null)
 					&& (fromPartyIdentifier.getParty().length() > 0)) {
-				TRACE.debugT(SIGNATURE, MCAConstants.LogCategoryConnect, "Address normalization for party: {0} is: {1}", new Object[] {
+				TRACE.debugT(SIGNATURE, AdapterConstants.LogCategoryConnect, "Address normalization for party: {0} is: {1}", new Object[] {
 						fromParty, fromPartyIdentifier.getPartyIdentifier() });
 				fromParty = fromPartyIdentifier.getPartyIdentifier();
 			} else {
-				TRACE.debugT(SIGNATURE, MCAConstants.LogCategoryConnect, "Address normalization is not defined for party: {0}", new Object[] { fromParty });
+				TRACE.debugT(SIGNATURE, AdapterConstants.LogCategoryConnect, "Address normalization is not defined for party: {0}", new Object[] { fromParty });
 			}
 			toServiceIdentifier = normalizer.getAlternativeServiceIdentifier(toParty, toService, "GLN");
 			if ((toServiceIdentifier != null) && (toServiceIdentifier.getServiceIdentifier() != null)
 					&& (toServiceIdentifier.getServiceIdentifier().length() > 0)) {
-				TRACE.debugT(SIGNATURE, MCAConstants.LogCategoryConnect, "Address normalization for service: {0} is: {1}", new Object[] {
+				TRACE.debugT(SIGNATURE, AdapterConstants.LogCategoryConnect, "Address normalization for service: {0} is: {1}", new Object[] {
 						toService, toServiceIdentifier.getServiceIdentifier() });
 				toService = toServiceIdentifier.getServiceIdentifier();
 			} else {
-				TRACE.debugT(SIGNATURE, MCAConstants.LogCategoryConnect, "Address normalization is not defined for service: {0}", new Object[] { toService });
+				TRACE.debugT(SIGNATURE, AdapterConstants.LogCategoryConnect, "Address normalization is not defined for service: {0}", new Object[] { toService });
 			}
 			toPartyIdentifier = normalizer.getAlternativePartyIdentifier("009", "GLN", toParty);
 			if ((toPartyIdentifier != null) && (toPartyIdentifier.getParty() != null)
 					&& (toPartyIdentifier.getParty().length() > 0)) {
-				TRACE.debugT(SIGNATURE, MCAConstants.LogCategoryConnect, "Address normalization for party: {0} is: {1}", new Object[] {
+				TRACE.debugT(SIGNATURE, AdapterConstants.LogCategoryConnect, "Address normalization for party: {0} is: {1}", new Object[] {
 						toParty, toPartyIdentifier.getPartyIdentifier() });
 				toParty = toPartyIdentifier.getPartyIdentifier();
 			} else {
-				TRACE.debugT(SIGNATURE, MCAConstants.LogCategoryConnect, "Address normalization is not defined for party: {0}", new Object[] { toParty });
+				TRACE.debugT(SIGNATURE, AdapterConstants.LogCategoryConnect, "Address normalization is not defined for party: {0}", new Object[] { toParty });
 			}
 		} catch (Exception e) {
 			TRACE.catching(SIGNATURE, e);
-			TRACE.errorT(SIGNATURE, MCAConstants.LogCategoryConnect, "SOA.apt_sample.0005", "Exception during address normalization. Reason: {0}. Error will be ignored.", new Object[] { e.getMessage() });
+			TRACE.errorT(SIGNATURE, AdapterConstants.LogCategoryConnect, "SOA.apt_sample.0005", "Exception during address normalization. Reason: {0}. Error will be ignored.", new Object[] { e.getMessage() });
 		}
 		String[] result = new String[4];
 		result[0] = fromParty;
@@ -426,17 +424,17 @@ public class CCIInteraction implements XIInteraction {
 		TRACE.entering(SIGNATURE, new Object[] { channelID });
 		String[] result = new String[2];
 		try {
-			TRACE.debugT(SIGNATURE, MCAConstants.LogCategoryConnect, "Get channel CPA object with channelID {0}", new Object[] { channelID });
+			TRACE.debugT(SIGNATURE, AdapterConstants.LogCategoryConnect, "Get channel CPA object with channelID {0}", new Object[] { channelID });
 			Channel channel = (Channel) CPAFactory.getInstance().getLookupManager().getCPAObject(CPAObjectType.CHANNEL, channelID);
 			result[0] = channel.getValueAsString("faultInterface");
 			result[1] = channel.getValueAsString("faultInterfaceNamespace");
-			TRACE.debugT(SIGNATURE, MCAConstants.LogCategoryCONNECT_AF, "Read this fault interface value: Name: {0} Namespace: {1}", new Object[] {
+			TRACE.debugT(SIGNATURE, AdapterConstants.LogCategoryCONNECT_AF, "Read this fault interface value: Name: {0} Namespace: {1}", new Object[] {
 					result[0], result[1] });
 		} catch (Exception e) {
 			TRACE.catching(SIGNATURE, e);
 			result[0] = "XIAFJCASampleFault";
 			result[1] = "http://sap.com/xi/XI/sample/JCA";
-			TRACE.debugT(SIGNATURE, MCAConstants.LogCategoryCONNECT_AF, "Fault interface cannot be read from channel configuration due to {0}. Take defaults value: Name: {1} Namespace: {2}", new Object[] {
+			TRACE.debugT(SIGNATURE, AdapterConstants.LogCategoryCONNECT_AF, "Fault interface cannot be read from channel configuration due to {0}. Take defaults value: Name: {1} Namespace: {2}", new Object[] {
 					e.getMessage(), result[0], result[1] });
 		}
 		TRACE.exiting(SIGNATURE);
@@ -625,61 +623,61 @@ public class CCIInteraction implements XIInteraction {
 		}
 		try {
 
-			TRACE.debugT(SIGNATURE, MCAConstants.LogCategoryCONNECT_AF, "Create synchronous response.");
+			TRACE.debugT(SIGNATURE, AdapterConstants.LogCategoryCONNECT_AF, "Create synchronous response.");
 			if (payText.indexOf("<ApplicationError>") == -1) {
 				output = new XIMessageRecordImpl(msg.getToParty(), msg.getFromParty(), msg.getToService(), msg.getFromService(), msg.getAction());
 
-				TRACE.debugT(SIGNATURE, MCAConstants.LogCategoryCONNECT_AF, "Retrieve XI message from output: "
+				TRACE.debugT(SIGNATURE, AdapterConstants.LogCategoryCONNECT_AF, "Retrieve XI message from output: "
 						+ output.toString());
 				Message response = output.getXIMessage();
 
-				TRACE.debugT(SIGNATURE, MCAConstants.LogCategoryCONNECT_AF, "Create payload of synchronous response: "
+				TRACE.debugT(SIGNATURE, AdapterConstants.LogCategoryCONNECT_AF, "Create payload of synchronous response: "
 						+ response.toString());
 				XMLPayload xp = response.createXMLPayload();
 
-				TRACE.debugT(SIGNATURE, MCAConstants.LogCategoryCONNECT_AF, "Fill payload of synchronous response: "
+				TRACE.debugT(SIGNATURE, AdapterConstants.LogCategoryCONNECT_AF, "Fill payload of synchronous response: "
 						+ xp.toString());
 				xp.setText("<?xml version=\"1.0\" encoding=\"UTF-8\"?><Response>OK</Response>");
 				xp.setName("MainDocument");
 				xp.setDescription("XI AF Sample Adapter Sync Response");
 				xp.setContentType("application/xml");
 
-				TRACE.debugT(SIGNATURE, MCAConstants.LogCategoryCONNECT_AF, "Set payload of synchronous response.");
+				TRACE.debugT(SIGNATURE, AdapterConstants.LogCategoryCONNECT_AF, "Set payload of synchronous response.");
 				response.setDocument(xp);
 				String requestId = msg.getMessageId();
-				TRACE.debugT(SIGNATURE, MCAConstants.LogCategoryCONNECT_AF, "Set RefToMsgId of synchronous response to: "
+				TRACE.debugT(SIGNATURE, AdapterConstants.LogCategoryCONNECT_AF, "Set RefToMsgId of synchronous response to: "
 						+ requestId);
 				response.setRefToMessageId(requestId);
 
 				this.audit.addAuditLogEntry(amk, AuditLogStatus.SUCCESS, "Sync. message was forwarded succesfully to the file system");
 			} else {
-				TRACE.debugT(SIGNATURE, MCAConstants.LogCategoryConnect, "Payload contains the <ApplicationError> tag that causes a application error response for testing purposes!");
+				TRACE.debugT(SIGNATURE, AdapterConstants.LogCategoryConnect, "Payload contains the <ApplicationError> tag that causes a application error response for testing purposes!");
 				this.audit.addAuditLogEntry(amk, AuditLogStatus.ERROR, "Simulate application error response now.");
 
 				String[] faultIF = getFaultIF(mc.getChannelID());
 				Action action = new Action(faultIF[0], faultIF[1]);
 				output = new XIMessageRecordImpl(msg.getToParty(), msg.getFromParty(), msg.getToService(), msg.getFromService(), action);
 
-				TRACE.debugT(SIGNATURE, MCAConstants.LogCategoryCONNECT_AF, "Retrieve XI message from output: "
+				TRACE.debugT(SIGNATURE, AdapterConstants.LogCategoryCONNECT_AF, "Retrieve XI message from output: "
 						+ output.toString());
 				Message response = output.getXIMessage();
 
-				TRACE.debugT(SIGNATURE, MCAConstants.LogCategoryCONNECT_AF, "Create payload of synchronous error response: "
+				TRACE.debugT(SIGNATURE, AdapterConstants.LogCategoryCONNECT_AF, "Create payload of synchronous error response: "
 						+ response.toString());
 
 				XMLPayload xp = response.createXMLPayload();
 				xp.setName("MainDocument");
 				xp.setDescription("XI AF Sample Adapter Sync Error Response");
 				if (payText.indexOf("ApplicationErrorBinaryPayload") != -1) {
-					TRACE.debugT(SIGNATURE, MCAConstants.LogCategoryCONNECT_AF, "Fill binary payload of synchronous ApplicationError response");
+					TRACE.debugT(SIGNATURE, AdapterConstants.LogCategoryCONNECT_AF, "Fill binary payload of synchronous ApplicationError response");
 					xp.setContent(new byte[] { 48, 49, 50, 51, 52, 53, 54, 55, 56, 57 });
 					xp.setContentType("application/octet-stream");
 				} else if (payText.indexOf("ApplicationErrorTextPayload") != -1) {
-					TRACE.debugT(SIGNATURE, MCAConstants.LogCategoryCONNECT_AF, "Fill text payload of synchronous ApplicationError response");
+					TRACE.debugT(SIGNATURE, AdapterConstants.LogCategoryCONNECT_AF, "Fill text payload of synchronous ApplicationError response");
 					xp.setText("Error simulated, ApplicationError contains text payload only");
 					xp.setContentType("text/plain");
 				} else if (payText.indexOf("ApplicationErrorXMLPayloadWithAtt") != -1) {
-					TRACE.debugT(SIGNATURE, MCAConstants.LogCategoryCONNECT_AF, "Fill XML payload of synchronous ApplicationError response with binary attachment");
+					TRACE.debugT(SIGNATURE, AdapterConstants.LogCategoryCONNECT_AF, "Fill XML payload of synchronous ApplicationError response with binary attachment");
 					xp.setText("<?xml version=\"1.0\" encoding=\"UTF-8\"?><Failure><Error>Error simulated, ApplicationError contains XML payload with binary attachment</Error></Failure>");
 					xp.setContentType("application/xml");
 					Payload p = response.createPayload();
@@ -689,15 +687,15 @@ public class CCIInteraction implements XIInteraction {
 					p.setDescription("XI AF Sample Adapter Sync Error Response binary attachment");
 					response.addAttachment(p);
 				} else {
-					TRACE.debugT(SIGNATURE, MCAConstants.LogCategoryCONNECT_AF, "Fill XML payload of synchronous ApplicationError response");
+					TRACE.debugT(SIGNATURE, AdapterConstants.LogCategoryCONNECT_AF, "Fill XML payload of synchronous ApplicationError response");
 					xp.setText("<?xml version=\"1.0\" encoding=\"UTF-8\"?><Failure><Error>Error simulated, ApplicationError contains XML payload only</Error></Failure>");
 					xp.setContentType("application/xml");
 				}
-				TRACE.debugT(SIGNATURE, MCAConstants.LogCategoryCONNECT_AF, "Set payload of synchronous error response.");
+				TRACE.debugT(SIGNATURE, AdapterConstants.LogCategoryCONNECT_AF, "Set payload of synchronous error response.");
 				response.setDocument(xp);
 
 				String requestId = msg.getMessageId();
-				TRACE.debugT(SIGNATURE, MCAConstants.LogCategoryCONNECT_AF, "Set RefToMsgId of synchronous error response to: "
+				TRACE.debugT(SIGNATURE, AdapterConstants.LogCategoryCONNECT_AF, "Set RefToMsgId of synchronous error response to: "
 						+ requestId);
 				response.setRefToMessageId(requestId);
 

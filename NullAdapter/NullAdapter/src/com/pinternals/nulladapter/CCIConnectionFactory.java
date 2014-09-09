@@ -43,7 +43,7 @@ public class CCIConnectionFactory implements XIConnectionFactory, Serializable, 
 
 		SPIManagedConnectionFactory smcf = null;
 		if (mcf == null) {
-			TRACE.warningT(SIGNATURE, MCAConstants.LogCategoryServer, "ManagedConnectionFactory was null, local instance created instead!");
+			TRACE.warningT(SIGNATURE, AdapterConstants.LogCategoryServer, "ManagedConnectionFactory was null, local instance created instead!");
 			smcf = new SPIManagedConnectionFactory();
 		} else {
 			if (!(mcf instanceof SPIManagedConnectionFactory)) {
@@ -65,7 +65,7 @@ public class CCIConnectionFactory implements XIConnectionFactory, Serializable, 
 
 		SPIManagedConnectionFactory smcf = null;
 		if (mcf == null) {
-			TRACE.warningT(SIGNATURE, MCAConstants.LogCategoryServer, "ManagedConnectionFactory was null, local instance created instead!");
+			TRACE.warningT(SIGNATURE, AdapterConstants.LogCategoryServer, "ManagedConnectionFactory was null, local instance created instead!");
 			smcf = new SPIManagedConnectionFactory();
 		} else {
 			if (!(mcf instanceof SPIManagedConnectionFactory)) {
@@ -78,7 +78,7 @@ public class CCIConnectionFactory implements XIConnectionFactory, Serializable, 
 		this.mcf = smcf;
 		this.rf = new XIMessageFactoryImpl(smcf.getAdapterType(), smcf.getAdapterNamespace());
 		if (cm == null) {
-			TRACE.warningT(SIGNATURE, MCAConstants.LogCategoryServer, "ConnectionManager was null, local instance created instead (two-tier)!");
+			TRACE.warningT(SIGNATURE, AdapterConstants.LogCategoryServer, "ConnectionManager was null, local instance created instead (two-tier)!");
 			this.cm = new SPIConnectionManager();
 		} else {
 			this.cm = cm;

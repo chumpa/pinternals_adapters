@@ -2,8 +2,7 @@
 <project-modules id="moduleCoreId" project-version="1.5.0">
     <wb-module deploy-name="NullAdapterApp">
         <wb-resource deploy-path="/" source-path="/EarContent"/>
-        <dependent-module archiveName="NullAdapter.rar" deploy-path="/" handle="module:/resource/NullAdapter/NullAdapter">
-            <dependent-object>ConnectorModule_1410275111063</dependent-object>
+        <dependent-module archiveName="Null.rar" deploy-path="/" handle="module:/resource/Null/Null">
             <dependency-type>uses</dependency-type>
         </dependent-module>
     </wb-module>

@@ -3,7 +3,7 @@
 	<name>NullAdapterApp</name>
 	<comment></comment>
 	<projects>
-		<project>NullAdapter</project>
+		<project>Null</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

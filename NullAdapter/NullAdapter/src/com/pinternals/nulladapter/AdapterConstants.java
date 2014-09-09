@@ -2,9 +2,9 @@ package com.pinternals.nulladapter;
 
 import com.sap.tc.logging.Category;
 
-public class MCAConstants {
+public class AdapterConstants {
 	public static String version = "0.1";
-	public static String ADAPTER_TYPE = "NullAdapter";
+	public static String ADAPTER_TYPE = "Null";
 	public static String ADAPTER_NAMESPACE = "urn:pinternals-adapters";
 
 	public static final Category LogCategoryRoot = Category.getCategory(Category.getRoot(), "Applications/ExchangeInfrastructure/Adapter/" + ADAPTER_TYPE);
