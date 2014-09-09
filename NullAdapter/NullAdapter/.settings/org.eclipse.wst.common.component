@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project-modules id="moduleCoreId" project-version="1.5.0">
-    <wb-module deploy-name="NullAdapter">
+    <wb-module deploy-name="NullAdapterApp">
         <wb-resource deploy-path="/" source-path="/EarContent"/>
-        <dependent-module archiveName="NullRA.rar" deploy-path="/" handle="module:/resource/NullRA/NullRA">
-            <dependent-object>ConnectorModule_1409847960566</dependent-object>
+        <dependent-module archiveName="NullAdapter.rar" deploy-path="/" handle="module:/resource/NullAdapter/NullAdapter">
+            <dependent-object>ConnectorModule_1410275111063</dependent-object>
             <dependency-type>uses</dependency-type>
         </dependent-module>
     </wb-module>

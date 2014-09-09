@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>NullAdapter</name>
+	<name>NullAdapterApp</name>
 	<comment></comment>
 	<projects>
-		<project>NullRA</project>
+		<project>NullAdapter</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
