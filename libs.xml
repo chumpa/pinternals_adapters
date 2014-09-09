@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<eclipse-userlibraries version="2">
+    <library name="SAP_USER_ADD_LIBS_AF" systemlibrary="false">
+        <archive path="C:/sap/SAP_USER_ADD_LIBS_MIN/com.sap.aii.af.svc_api.jar"/>
+        <archive path="C:/sap/SAP_USER_ADD_LIBS_MIN/com.sap.aii.utilxi.server.jar"/>
+        <archive path="C:/sap/SAP_USER_ADD_LIBS_MIN/com.sap.aii.af.lib.mod.jar"/>
+        <archive path="C:/sap/SAP_USER_ADD_LIBS_MIN/com.sap.aii.adapter.xi.svc_api.jar"/>
+        <archive path="C:/sap/SAP_USER_ADD_LIBS_MIN/com.sap.aii.af.sdk.jar"/>
+        <archive path="C:/sap/SAP_USER_ADD_LIBS_MIN/com.sap.aii.af.ms.ifc_api.jar"/>
+        <archive path="C:/sap/SAP_USER_ADD_LIBS_MIN/sap.com~tc~exception~impl.jar"/>
+        <archive path="C:/sap/SAP_USER_ADD_LIBS_MIN/com.sap.aii.af.cpa.svc.api.jar"/>
+        <archive path="C:/sap/SAP_USER_ADD_LIBS_MIN/com.sap.aii.sec.lib_api.jar"/>
+        <archive path="C:/sap/SAP_USER_ADD_LIBS_MIN/com.sap.aii.sec.svc_api.jar"/>
+        <!--archive path="C:/sap/SAP_USER_ADD_LIBS_MIN/"/-->
+    </library>
+</eclipse-userlibraries>
