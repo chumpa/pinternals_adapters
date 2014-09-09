@@ -6,9 +6,20 @@ title Inbound message processing
 	
 	autonumber "<b>[0]"
 	AF -> SPIMCF: constructor()
-	SPIMCF -> SPIMCF: Get SAPAdapterResources and <b>mcfGuid</b>
+	activate SPIMCF
+	SPIMCF -> SPIMCF: Get SAPAdapterResources \n and <b>mcfGuid</b>
 	SPIMCF --> AF: done
+	deactivate SPIMCF
 	
-	AF ->
+	AF ->> SPIMCF: start() <-- async?
+	
+	activate SPIMCF
+		SPIMCF -> SPIMCF: startMCF()
+		SPIMCF -> SPIMCF: run()
+		SPIMCF -> SPIMCF: startTimer()
+		SPIMCF -> SPIMCF: run()
+		SPIMCF -> SPIMCF: startTimer() ...
+	deactivate SPIMCF
+	
 	
 @enduml
