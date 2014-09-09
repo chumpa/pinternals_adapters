@@ -1,4 +1,2 @@
 
-NullAdapters
-
-Null is the basis of adapter (JCA) development for SAP PI.
+NullAdapter - SAP PI JCA 1.0 compliant adapter with minimum functionality
