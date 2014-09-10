@@ -4,27 +4,39 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
 import com.pinternals.nulladapter.AdapterConstants;
-//import com.pinternals.nulladapter.XITrace;
+import com.sap.aii.af.lib.trace.Trace;
 import com.sap.aii.af.service.cpa.Channel;
 import com.sap.aii.af.service.resource.SAPAdapterResources;
 import com.sap.aii.af.service.util.transaction.api.TxManager;
+import com.sap.engine.services.configuration.appconfiguration.ApplicationPropertiesAccess;
 import com.sap.guid.GUID;
-import com.sap.aii.af.lib.trace.Trace;
 
 public class AFUtil {
 	public InitialContext ctx = null;
 	public SAPAdapterResources msRes = null;
 	public GUID mcfLocalGuid = null;
 	private TxManager txMgr = null;
-	
+//	public ApplicationPropertiesAccess appCfgProps = null;             
+	java.util.Properties appProps = null;
+	private static final Trace TRACE = new Trace(AFUtil.class.getName());
+
 	public AFUtil() throws NamingException {
+		String SIGNATURE = "AFUtil()";
+		TRACE.entering(SIGNATURE);
 		this.ctx = new InitialContext();
-		Object x = ctx.lookup("SAPAdapterResources");
-		this.msRes = ((SAPAdapterResources) x);
+		this.msRes = ((SAPAdapterResources) ctx.lookup("SAPAdapterResources"));
         this.txMgr = this.msRes.getTransactionManager();
-        if (this.txMgr==null) {
-        	//TODO: quark!
-        }
+     
+        InitialContext b = new InitialContext();
+        ApplicationPropertiesAccess appCfgProps = (ApplicationPropertiesAccess)b.lookup("ApplicationConfiguration");
+//		appCfgProps = (ApplicationPropertiesAccess)this.ctx.lookup("ApplicationConfiguration"); 
+		appProps = appCfgProps.getApplicationProperties();
+		if (appProps!=null)
+			TRACE.fatalT(SIGNATURE, "null.username=" + appProps.getProperty("null.username"));
+		else
+			TRACE.fatalT(SIGNATURE, "Can't get properties. appCfgProps="+appCfgProps + ", appProps="+appProps+", InitialContext="+b);
+		
+        TRACE.exiting(SIGNATURE);
 	}
 
 	

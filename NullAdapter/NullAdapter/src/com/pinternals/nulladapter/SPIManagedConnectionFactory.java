@@ -12,9 +12,6 @@ import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import javax.mail.Folder;
-import javax.mail.Session;
-import javax.mail.Store;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.resource.ResourceException;
@@ -29,42 +26,26 @@ import com.pinternals.AFUtil;
 import com.sap.aii.af.lib.mp.module.ModuleData;
 import com.sap.aii.af.lib.mp.processor.ModuleProcessor;
 import com.sap.aii.af.lib.mp.processor.ModuleProcessorFactory;
+import com.sap.aii.af.lib.trace.Trace;
 import com.sap.aii.af.service.administration.api.cpa.CPAFactory;
-import com.sap.aii.af.service.administration.api.monitoring.ChannelDirection;
-import com.sap.aii.af.service.administration.api.monitoring.MonitoringManager;
-import com.sap.aii.af.service.administration.api.monitoring.MonitoringManagerFactory;
-import com.sap.aii.af.service.administration.api.monitoring.ProcessContext;
-import com.sap.aii.af.service.administration.api.monitoring.ProcessContextFactory;
-import com.sap.aii.af.service.administration.api.monitoring.ProcessState;
-import com.sap.aii.af.service.cpa.Binding;
 import com.sap.aii.af.service.cpa.CPAObjectType;
 import com.sap.aii.af.service.cpa.Channel;
 import com.sap.aii.af.service.cpa.Direction;
 import com.sap.aii.af.service.idmap.MessageIDMapper;
-import com.sap.aii.af.service.util.transaction.api.TxManager;
 import com.sap.engine.interfaces.connector.ManagedConnectionFactoryActivation;
 import com.sap.engine.interfaces.messaging.api.DeliverySemantics;
 import com.sap.engine.interfaces.messaging.api.Message;
-import com.sap.engine.interfaces.messaging.api.MessageDirection;
-import com.sap.engine.interfaces.messaging.api.MessageKey;
-import com.sap.engine.interfaces.messaging.api.Payload;
 import com.sap.engine.interfaces.messaging.api.PublicAPIAccessFactory;
-import com.sap.engine.interfaces.messaging.api.TextPayload;
 import com.sap.engine.interfaces.messaging.api.XMLPayload;
 import com.sap.engine.interfaces.messaging.api.auditlog.AuditAccess;
-import com.sap.engine.interfaces.messaging.api.auditlog.AuditLogStatus;
-import com.sap.engine.interfaces.messaging.api.exception.RetryControlException;
-import com.sap.engine.interfaces.messaging.api.exception.RetryMode; //import com.sap.engine.services.ts.transaction.TxException;
-//import com.sap.engine.services.ts.transaction.TxRollbackException;
 import com.sap.guid.GUID;
-import com.sap.aii.af.lib.trace.Trace;
 
 public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 		Serializable, Runnable, ManagedConnectionFactoryActivation {
 	
+	private static final long serialVersionUID = 2048446881865672258L;
 	// probably required for callers
 	public static final String JNDI_NAME = AdapterConstants.JNDI_NAME;
-	static final long serialVersionUID = 1804197500444L;
 	private static final Trace TRACE = new Trace(SPIManagedConnectionFactory.class.getName());
 
 	// Всякие утилиты
@@ -451,7 +432,10 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 
 		String oldThreadName = Thread.currentThread().getName();
 		String newThreadName = "Null_" + utl.mcfLocalGuid;
+
 		try {
+			InitialContext ctx = new InitialContext();
+
 			Thread.currentThread().setName(newThreadName);
 			TRACE.debugT(SIGNATURE, AdapterConstants.lcAF,
 					"Switched thread name to: {0}",
@@ -513,87 +497,85 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 					for (int i = 0; i < channels.size(); i++) {
 						Channel channel = (Channel) channels.get(i);
 						try {
-							String processMode = null;
-							String qos = null;
-							String psec = null;
-							String raiseError = null;
-							String channelAddressMode = null;
-							boolean set_asma = false;
+//							String processMode = null;
+//							String qos = null;
+//							String psec = null;
+//							String raiseError = null;
+//							String channelAddressMode = null;
+//							boolean set_asma = false;
 
-							try {
-								qos = channel.getValueAsString("qos");
-								psec = channel.getValueAsString("pollInterval");
-							} catch (Exception e) {
-								TRACE.catching(SIGNATURE, e);
-							}
-							int ptime = 0;
-							if ((psec != null) && (psec.length() > 0)) {
-								ptime = Integer.valueOf(psec).intValue() * 1000;
-							}
-							if ((pollTime < 0) || (ptime < pollTime)) {
-								pollTime = ptime;
-							}
+//							try {
+//								qos = channel.getValueAsString("qos");
+//								psec = channel.getValueAsString("pollInterval");
+//							} catch (Exception e) {
+//								TRACE.catching(SIGNATURE, e);
+//							}
+							int ptime = 60*1000*1000;
+//							if ((psec != null) && (psec.length() > 0)) {
+//								ptime = Integer.valueOf(psec).intValue() * 1000;
+//							}
+//							if ((pollTime < 0) || (ptime < pollTime)) {
+//								pollTime = ptime;
+//							}
 							// sendMessageFromFile("/dev/null", channel,
 							// processMode, qos, raiseError, channelAddressMode,
 							// set_asma);
 							// test code
-							TRACE.warningT(SIGNATURE,
-									AdapterConstants.lcAF,
-									"Code for polling Mail Sender @@@");
+//							TRACE.warningT(SIGNATURE,
+//									AdapterConstants.lcAF,
+//									"Code for polling Mail Sender @@@");
 
-							InitialContext ctx = new InitialContext();
-							Session ses = (Session) ctx
-									.lookup("java:comp/env/mail/MailSession");
-							TRACE.debugT(SIGNATURE, "Session:" + ses + " "
-									+ ses.getStore().toString());
-							Store st = ses.getStore("imaps");
-							st.connect();
-							Folder f = st.getDefaultFolder();
-							int mc;
-							TRACE.debugT(SIGNATURE,
-									"Store: {0}, Folder: {1},{2}",
-									new Object[] { st, f, f.getFullName() });
-
-							f = st.getFolder("INBOX");
-							mc = f.getMessageCount();
-							TRACE
-									.debugT(
-											SIGNATURE,
-											"Store: {0}, Folder: {1}, messages count: {2}",
-											new Object[] { st, f, mc });
-
-							f = st.getFolder("INBOX/CurrencyRates");
-							mc = f.getMessageCount();
-							TRACE
-									.debugT(
-											SIGNATURE,
-											"Store: {0}, Folder: {1}, messages count: {2}",
-											new Object[] { st, f, mc });
-
-							f = st.getFolder("Inbox/CurrencyRates");
-							mc = f.getMessageCount();
-							TRACE
-									.debugT(
-											SIGNATURE,
-											"Store: {0}, Folder: {1}, messages count: {2}",
-											new Object[] { st, f, mc });
-
-							Binding b = CPAFactory.getInstance()
-									.getLookupManager().getBindingByChannelId(
-											channel.getObjectId());
-							Message msg = mf.createMessageRecord(b
-									.getFromParty(), b.getFromService(), b
-									.getToParty(), b.getToService(), b
-									.getActionName(), b.getActionNamespace());
-							XMLPayload p = msg.createXMLPayload();
-							p.setContent("<a/>".getBytes());
-							msg
-									.setDeliverySemantics(DeliverySemantics.ExactlyOnce);
-							p.setName("MainDocument");
-							p
-									.setDescription("XI AF Sample Adapter Input: XML document as MainDocument");
-							msg.setDocument(p);
-
+//							Session ses = (Session) ctx.lookup("java:comp/env/mail/MailSession");
+//							TRACE.debugT(SIGNATURE, "Session:" + ses + " "
+//									+ ses.getStore().toString());
+//							Store st = ses.getStore("imaps");
+//							st.connect();
+//							Folder f = st.getDefaultFolder();
+//							int mc;
+//							TRACE.debugT(SIGNATURE,
+//									"Store: {0}, Folder: {1},{2}",
+//									new Object[] { st, f, f.getFullName() });
+//
+//							f = st.getFolder("INBOX");
+//							mc = f.getMessageCount();
+//							TRACE
+//									.debugT(
+//											SIGNATURE,
+//											"Store: {0}, Folder: {1}, messages count: {2}",
+//											new Object[] { st, f, mc });
+//
+//							f = st.getFolder("INBOX/CurrencyRates");
+//							mc = f.getMessageCount();
+//							TRACE
+//									.debugT(
+//											SIGNATURE,
+//											"Store: {0}, Folder: {1}, messages count: {2}",
+//											new Object[] { st, f, mc });
+//
+//							f = st.getFolder("Inbox/CurrencyRates");
+//							mc = f.getMessageCount();
+//							TRACE
+//									.debugT(
+//											SIGNATURE,
+//											"Store: {0}, Folder: {1}, messages count: {2}",
+//											new Object[] { st, f, mc });
+//
+//							Binding b = CPAFactory.getInstance()
+//									.getLookupManager().getBindingByChannelId(
+//											channel.getObjectId());
+//							Message msg = mf.createMessageRecord(b
+//									.getFromParty(), b.getFromService(), b
+//									.getToParty(), b.getToService(), b
+//									.getActionName(), b.getActionNamespace());
+//							XMLPayload p = msg.createXMLPayload();
+//							p.setContent("<a/>".getBytes());
+//							msg
+//									.setDeliverySemantics(DeliverySemantics.ExactlyOnce);
+//							p.setName("MainDocument");
+//							p
+//									.setDescription("XI AF Sample Adapter Input: XML document as MainDocument");
+//							msg.setDocument(p);
+//
 						} catch (Exception e) {
 							TRACE.catching(SIGNATURE, e);
 							TRACE
@@ -630,6 +612,9 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 					threadStatus = 2;
 				}
 			}
+		} catch (NamingException e) {
+			TRACE.catching(SIGNATURE, e);
+			TRACE.errorT(SIGNATURE, AdapterConstants.lcAF, "Can't get parameters");
 		} finally {
 			Thread.currentThread().setName(oldThreadName);
 			TRACE.debugT(SIGNATURE, AdapterConstants.lcAF,

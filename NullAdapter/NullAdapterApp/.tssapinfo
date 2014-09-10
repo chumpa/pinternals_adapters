@@ -5,4 +5,5 @@
 <Property key="j2ee.archive.name" value="NullAdapterApp.ear"/>
 <Property key="j2ee.archive.location" value="/"/>
 </Properties>
+<ExternalProjects/>
 </TSSAP-INFO>
