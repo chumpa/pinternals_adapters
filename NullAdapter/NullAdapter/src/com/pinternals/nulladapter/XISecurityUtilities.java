@@ -7,9 +7,10 @@ import javax.resource.spi.ConnectionRequestInfo;
 import javax.resource.spi.ManagedConnectionFactory;
 import javax.resource.spi.security.PasswordCredential;
 import javax.security.auth.Subject;
+import com.sap.aii.af.lib.trace.Trace;
 
 public class XISecurityUtilities {
-	private static final XITrace TRACE = new XITrace(XISecurityUtilities.class.getName());
+	private static final Trace TRACE = new Trace(XISecurityUtilities.class.getName());
 
 	public static PasswordCredential getPasswordCredential(final ManagedConnectionFactory mcf,
 			final Subject subject, ConnectionRequestInfo info) throws ResourceException {

@@ -3,11 +3,12 @@ package com.pinternals.nulladapter;
 import javax.resource.ResourceException;
 import javax.resource.cci.ConnectionMetaData;
 import javax.resource.spi.security.PasswordCredential;
+import com.sap.aii.af.lib.trace.Trace;
 
 public class CCIConnectionMetaData implements ConnectionMetaData {
-	private static final XITrace TRACE = new XITrace(CCIConnectionMetaData.class.getName());
+	private static final Trace TRACE = new Trace(CCIConnectionMetaData.class.getName());
 	private SPIManagedConnection mc;
-	private static final String version = new String("0.1");
+	private static final String version = new String(AdapterConstants.version);
 	private static final String name = new String("Connection");
 
 	public CCIConnectionMetaData(SPIManagedConnection mc) {

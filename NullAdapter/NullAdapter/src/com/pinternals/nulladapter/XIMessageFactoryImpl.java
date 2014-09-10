@@ -16,10 +16,11 @@ import com.sap.engine.interfaces.messaging.api.PublicAPIAccessFactory;
 import com.sap.engine.interfaces.messaging.api.Service;
 import com.sap.engine.interfaces.messaging.api.ack.AckFactory;
 import com.sap.engine.interfaces.messaging.api.exception.MessagingException;
+import com.sap.aii.af.lib.trace.Trace;
 
 public class XIMessageFactoryImpl implements XIRecordFactory {
 //	private static final String AF_MSGFCT_TYPE = "XI";
-	private static final XITrace TRACE = new XITrace(XIMessageFactoryImpl.class.getName());
+	private static final Trace TRACE = new Trace(XIMessageFactoryImpl.class.getName());
 	private MessageFactory mf = null;
 	private AckFactory af = null;
 	private String ackfct = null;

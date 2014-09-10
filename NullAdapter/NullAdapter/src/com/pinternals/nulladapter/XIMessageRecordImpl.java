@@ -10,11 +10,12 @@ import com.sap.engine.interfaces.messaging.api.Party;
 import com.sap.engine.interfaces.messaging.api.PublicAPIAccess;
 import com.sap.engine.interfaces.messaging.api.PublicAPIAccessFactory;
 import com.sap.engine.interfaces.messaging.api.Service;
+import com.sap.aii.af.lib.trace.Trace;
 
 public class XIMessageRecordImpl implements XIMessageRecord {
 	// private static final String AF_MSGFCT_TYPE = "XI";
 	static final long serialVersionUID = 6501765867377473542L;
-	private static final XITrace TRACE = new XITrace(XIMessageRecordImpl.class.getName());
+	private static final Trace TRACE = new Trace(XIMessageRecordImpl.class.getName());
 	private Message msg = null;
 	private final String recordName = "XiAfCciMessageRecord";
 	private String recordShortDescription = "XI AF CCI record for messages";

@@ -3,10 +3,11 @@ package com.pinternals.nulladapter;
 import javax.resource.NotSupportedException;
 
 import com.sap.aii.af.lib.ra.cci.XIInteractionSpec;
+import com.sap.aii.af.lib.trace.Trace;
 
 public class XIInteractionSpecImpl implements XIInteractionSpec {
 	static final long serialVersionUID = 380007446040217047L;
-	private static final XITrace TRACE = new XITrace(XIInteractionSpecImpl.class.getName());
+	private static final Trace TRACE = new Trace(XIInteractionSpecImpl.class.getName());
 	protected String functionName;
 	private Integer executionTimeout;
 	protected int interactionVerb;

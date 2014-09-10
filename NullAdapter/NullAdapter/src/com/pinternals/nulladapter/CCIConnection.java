@@ -9,8 +9,10 @@ import javax.resource.cci.LocalTransaction;
 import javax.resource.cci.ResultSetInfo;
 import javax.resource.spi.IllegalStateException;
 
+import com.sap.aii.af.lib.trace.Trace;
+
 public class CCIConnection implements Connection {
-	private static final XITrace TRACE = new XITrace(CCIConnection.class.getName());
+	private static final Trace TRACE = new Trace(CCIConnection.class.getName());
 	private SPIManagedConnection mc = null;
 
 	CCIConnection(SPIManagedConnection mc) {

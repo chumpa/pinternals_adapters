@@ -1,9 +1,10 @@
 package com.pinternals.nulladapter;
 
 import com.sap.aii.af.lib.ra.cci.XIConnectionSpec;
+import com.sap.aii.af.lib.trace.Trace;
 
 public class XIConnectionSpecImpl implements XIConnectionSpec {
-	private static final XITrace TRACE = new XITrace(XIConnectionSpecImpl.class.getName());
+	private static final Trace TRACE = new Trace(XIConnectionSpecImpl.class.getName());
 	private String userName;
 	private String password;
 	private String channelId;

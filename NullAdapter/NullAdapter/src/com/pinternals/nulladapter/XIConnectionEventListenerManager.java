@@ -5,10 +5,10 @@ import java.util.Vector;
 import javax.resource.spi.ConnectionEvent;
 import javax.resource.spi.ConnectionEventListener;
 import javax.resource.spi.ManagedConnection;
+import com.sap.aii.af.lib.trace.Trace;
 
 public class XIConnectionEventListenerManager {
-	private static final XITrace TRACE = new XITrace(XIConnectionEventListenerManager.class
-			.getName());
+	private static final Trace TRACE = new Trace(XIConnectionEventListenerManager.class.getName());
 	private Vector listeners;
 	private ManagedConnection mc = null;
 

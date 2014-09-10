@@ -8,18 +8,17 @@ import javax.resource.spi.ConnectionRequestInfo;
 import javax.resource.spi.ManagedConnection;
 import javax.resource.spi.ManagedConnectionFactory;
 
+import com.sap.aii.af.lib.trace.Trace;
+
 public class SPIConnectionManager implements ConnectionManager, Serializable {
-	static final long serialVersionUID = 1234L;
-	private static final XITrace TRACE = new XITrace(SPIConnectionManager.class.getName());
+	private static final long serialVersionUID = -4890204421275269508L;
+	private static final Trace TRACE = new Trace(SPIConnectionManager.class.getName());
 
 	public Object allocateConnection(ManagedConnectionFactory mcf, ConnectionRequestInfo info)
 			throws ResourceException {
 		String SIGNATURE = "allocateConnection(ManagedConnectionFactory mcf, ConnectionRequestInfo info)";
 		TRACE.entering(SIGNATURE, new Object[] { mcf });
-//		TRACE.warningT(SIGNATURE, "Info:", mcf.toString(), info.toString());
-		
 		ManagedConnection mc = mcf.createManagedConnection(null, info);
-
 		Object cciConnection = mc.getConnection(null, info);
 		TRACE.exiting(SIGNATURE);
 		return cciConnection;

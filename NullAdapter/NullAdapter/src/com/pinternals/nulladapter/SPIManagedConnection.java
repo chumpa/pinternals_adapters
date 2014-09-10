@@ -18,10 +18,11 @@ import javax.resource.spi.security.PasswordCredential;
 import javax.security.auth.Subject;
 import javax.transaction.xa.XAResource;
 
+import com.sap.aii.af.lib.trace.Trace;
 import com.sap.aii.af.service.cpa.Channel;
 
 public class SPIManagedConnection implements ManagedConnection {
-	private static final XITrace TRACE = new XITrace(SPIManagedConnection.class.getName());
+	private static final Trace TRACE = new Trace(SPIManagedConnection.class.getName());
 	private XIConnectionEventListenerManager cciListener;
 	private PasswordCredential credential;
 	private SPIManagedConnectionFactory mcf;
@@ -61,7 +62,7 @@ public class SPIManagedConnection implements ManagedConnection {
 
 		this.connectionSet = new HashSet<Object>();
 		this.cciListener = new XIConnectionEventListenerManager(this);
-		TRACE.infoT(SIGNATURE, AdapterConstants.LogCategoryConnect,
+		TRACE.infoT(SIGNATURE, AdapterConstants.lcConnect,
 				"Physical connection, the file, was opened sucessfuly");
 		TRACE.exiting(SIGNATURE);
 	}

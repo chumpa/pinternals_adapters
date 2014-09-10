@@ -4,11 +4,12 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
 import com.pinternals.nulladapter.AdapterConstants;
-import com.pinternals.nulladapter.XITrace;
+//import com.pinternals.nulladapter.XITrace;
 import com.sap.aii.af.service.cpa.Channel;
 import com.sap.aii.af.service.resource.SAPAdapterResources;
 import com.sap.aii.af.service.util.transaction.api.TxManager;
 import com.sap.guid.GUID;
+import com.sap.aii.af.lib.trace.Trace;
 
 public class AFUtil {
 	public InitialContext ctx = null;
@@ -27,10 +28,10 @@ public class AFUtil {
 	}
 
 	
-	public void getLocalGuid(XITrace trace, String signature) {
+	public void getLocalGuid(Trace trace, String signature) {
 		mcfLocalGuid = new GUID();
 		String x = "!!Started, localGuid=" + mcfLocalGuid.toString() + " " + mcfLocalGuid.toHexString();
-		trace.infoT(signature, AdapterConstants.LogCategoryCONNECT_AF, x);
+		trace.infoT(signature, AdapterConstants.lcAF, x);
 		
 //		TODO: try {
 //		} catch (Exception e) {

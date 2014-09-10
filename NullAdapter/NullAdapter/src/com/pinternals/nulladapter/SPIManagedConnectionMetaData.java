@@ -3,9 +3,10 @@ package com.pinternals.nulladapter;
 import javax.resource.ResourceException;
 import javax.resource.spi.IllegalStateException;
 import javax.resource.spi.ManagedConnectionMetaData;
+import com.sap.aii.af.lib.trace.Trace;
 
 public class SPIManagedConnectionMetaData implements ManagedConnectionMetaData {
-	private static final XITrace TRACE = new XITrace(SPIManagedConnectionMetaData.class.getName());
+	private static final Trace TRACE = new Trace(SPIManagedConnectionMetaData.class.getName());
 	private SPIManagedConnection mc;
 	private static final String version = new String("1.0");
 	private static final String name = new String(

@@ -57,13 +57,15 @@ import com.sap.engine.interfaces.messaging.api.exception.RetryControlException;
 import com.sap.engine.interfaces.messaging.api.exception.RetryMode; //import com.sap.engine.services.ts.transaction.TxException;
 //import com.sap.engine.services.ts.transaction.TxRollbackException;
 import com.sap.guid.GUID;
+import com.sap.aii.af.lib.trace.Trace;
 
 public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 		Serializable, Runnable, ManagedConnectionFactoryActivation {
-	public static final String JNDI_NAME = "deployedAdapters/%/shareable/%".replaceAll("%", AdapterConstants.ADAPTER_TYPE);
+	
+	// probably required for callers
+	public static final String JNDI_NAME = AdapterConstants.JNDI_NAME;
 	static final long serialVersionUID = 1804197500444L;
-	private static final XITrace TRACE = new XITrace(
-			SPIManagedConnectionFactory.class.getName());
+	private static final Trace TRACE = new Trace(SPIManagedConnectionFactory.class.getName());
 
 	// Всякие утилиты
 	AFUtil utl = null;
@@ -97,7 +99,7 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 			utl = new AFUtil();
 		} catch (NamingException e) {
 			TRACE.catching(SIGNATURE, e);
-			TRACE.errorT(SIGNATURE, AdapterConstants.LogCategoryCONNECT_AF,
+			TRACE.errorT(SIGNATURE, AdapterConstants.lcAF,
 					"MCA:SPMCF:106", "Cannot reach 'SAPAdapterResources'");
 		}
 		synchronized (utl) {
@@ -117,12 +119,12 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 					propWaitTime);
 		} catch (Exception e) {
 			TRACE.catching(SIGNATURE, e);
-			TRACE.errorT(SIGNATURE, AdapterConstants.LogCategoryCONNECT_AF,
+			TRACE.errorT(SIGNATURE, AdapterConstants.lcAF,
 					"MCA:SPMCF:116", err);
 			ResourceException re = new ResourceException(err);
 			throw re;
 		}
-		TRACE.debugT(SIGNATURE, AdapterConstants.LogCategoryCONNECT_AF,
+		TRACE.debugT(SIGNATURE, AdapterConstants.lcAF,
 				"Lookup of XI AF MP entry ejb was succesfully.");
 		TRACE.exiting(SIGNATURE);
 		return mp;
@@ -155,7 +157,7 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 		SPIManagedConnection mc = null;
 		if (!(info instanceof CCIConnectionRequestInfo)) {
 			TRACE
-					.errorT(SIGNATURE, AdapterConstants.LogCategoryCONNECT_AF,
+					.errorT(SIGNATURE, AdapterConstants.lcAF,
 							"MCA:SPMCF:150",
 							"Received an unknown ConnectionRequestInfo. Cannot determine channelId!");
 			ResourceException re = new ResourceException(
@@ -172,7 +174,7 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 			TRACE
 					.errorT(
 							SIGNATURE,
-							AdapterConstants.LogCategoryCONNECT_AF,
+							AdapterConstants.lcAF,
 							"MCA:SPMCF:160",
 							"Cannot access the channel parameters of channel: "
 									+ channelID
@@ -189,7 +191,7 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 				channel);
 		if (mc != null) {
 			// managedConnections.put(channelID, mc);
-			TRACE.debugT(SIGNATURE, AdapterConstants.LogCategoryCONNECT_AF,
+			TRACE.debugT(SIGNATURE, AdapterConstants.lcAF,
 					"For channelID {0} this managed connection is stored: {1}",
 					new Object[] { channelID, mc });
 		}
@@ -210,17 +212,17 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 				TRACE
 						.debugT(
 								SIGNATURE,
-								AdapterConstants.LogCategoryCONNECT_AF,
+								AdapterConstants.lcAF,
 								"ManagedConnection for channel ID {0} found and destroyed.",
 								new Object[] { channelID });
 			} else {
-				TRACE.warningT(SIGNATURE, AdapterConstants.LogCategoryCONNECT_AF,
+				TRACE.warningT(SIGNATURE, AdapterConstants.lcAF,
 						"ManagedConnection for channel ID {0} not found.",
 						new Object[] { channelID });
 			}
 		} catch (Exception e) {
 			TRACE.catching(SIGNATURE, e);
-			TRACE.errorT(SIGNATURE, AdapterConstants.LogCategoryCONNECT_AF,
+			TRACE.errorT(SIGNATURE, AdapterConstants.lcAF,
 					"MCA:SPMCF:193",
 					"Received exception during ManagedConnection destroy: "
 							+ e.getMessage());
@@ -251,7 +253,7 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 			cciInfo = (CCIConnectionRequestInfo) info;
 		} else {
 			TRACE
-					.errorT(SIGNATURE, AdapterConstants.LogCategoryCONNECT_AF,
+					.errorT(SIGNATURE, AdapterConstants.lcAF,
 							"Unknown ConnectionRequestInfo parameter received. Cannot match connection");
 			return null;
 		}
@@ -272,23 +274,23 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 						TRACE
 								.debugT(
 										SIGNATURE,
-										AdapterConstants.LogCategoryConnect,
+										AdapterConstants.lcConnect,
 										"Found existing ManagedConnection in container set for channel {0}.",
 										new Object[] { mc.getChannelID() });
 					} else {
 						TRACE
 								.debugT(SIGNATURE,
-										AdapterConstants.LogCategoryConnect,
+										AdapterConstants.lcConnect,
 										"ManagedConnection in container set does not fit. Ignore.");
 					}
 				} else {
 					TRACE
-							.debugT(SIGNATURE, AdapterConstants.LogCategoryConnect,
+							.debugT(SIGNATURE, AdapterConstants.lcConnect,
 									"Destroyed sample ManagedConnection in container set. Ignore.");
 				}
 			} else {
 				TRACE
-						.debugT(SIGNATURE, AdapterConstants.LogCategoryConnect,
+						.debugT(SIGNATURE, AdapterConstants.lcConnect,
 								"This is not a sample ManagedConnection in container set. Ignore.");
 			}
 		}
@@ -379,7 +381,7 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 			} catch (Exception e) {
 				TRACE.catching(SIGNATURE, e);
 				threadStatus = 2;
-				TRACE.errorT(SIGNATURE, AdapterConstants.LogCategoryCONNECT_AF,
+				TRACE.errorT(SIGNATURE, AdapterConstants.lcAF,
 						"SOA.apt_sample.0016",
 						"Cannot start inbound message thread");
 				ResourceException re = new ResourceException(e.getMessage());
@@ -403,7 +405,7 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 			xIConfiguration.stop();
 		} catch (Exception e) {
 			TRACE.catching(SIGNATURE, e);
-			TRACE.errorT(SIGNATURE, AdapterConstants.LogCategoryCONNECT_AF,
+			TRACE.errorT(SIGNATURE, AdapterConstants.lcAF,
 					"SOA.apt_sample.0017",
 					"Cannot stop inbound message thread. Reason: "
 							+ e.getMessage());
@@ -428,7 +430,7 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 				TRACE
 						.debugT(
 								SIGNATURE,
-								AdapterConstants.LogCategoryCONNECT_AF,
+								AdapterConstants.lcAF,
 								"Creation of MCF controller failed. No periodic MCF status reports available! Reason: "
 										+ e.getMessage());
 			}
@@ -451,7 +453,7 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 		String newThreadName = "Null_" + utl.mcfLocalGuid;
 		try {
 			Thread.currentThread().setName(newThreadName);
-			TRACE.debugT(SIGNATURE, AdapterConstants.LogCategoryCONNECT_AF,
+			TRACE.debugT(SIGNATURE, AdapterConstants.lcAF,
 					"Switched thread name to: {0}",
 					new Object[] { newThreadName });
 
@@ -464,7 +466,7 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 					notSet = false;
 				}
 				numTry++;
-				TRACE.debugT(SIGNATURE, AdapterConstants.LogCategoryCONNECT_AF,
+				TRACE.debugT(SIGNATURE, AdapterConstants.lcAF,
 						"MCF waits for setter completion. Try: {0} of {1}.",
 						new Object[] { Integer.toString(numTry),
 								Integer.toString(propWaitNum) });
@@ -482,7 +484,7 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 				TRACE
 						.errorT(
 								SIGNATURE,
-								AdapterConstants.LogCategoryCONNECT_AF,
+								AdapterConstants.lcAF,
 								"Cannot instatiate the NullAdapter module processor bean. The inbound processing is stopped. Exception:"
 										+ e.toString());
 				threadStatus = 2;
@@ -497,7 +499,7 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 					TRACE
 							.errorT(
 									SIGNATURE,
-									AdapterConstants.LogCategoryCONNECT_AF,
+									AdapterConstants.lcAF,
 									"SOA.apt_sample.0018",
 									"Cannot instatiate the XI CPA handler. The inbound processing is stopped. Exception:"
 											+ e.toString());
@@ -536,7 +538,7 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 							// set_asma);
 							// test code
 							TRACE.warningT(SIGNATURE,
-									AdapterConstants.LogCategoryCONNECT_AF,
+									AdapterConstants.lcAF,
 									"Code for polling Mail Sender @@@");
 
 							InitialContext ctx = new InitialContext();
@@ -597,7 +599,7 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 							TRACE
 									.errorT(
 											SIGNATURE,
-											AdapterConstants.LogCategoryCONNECT_AF,
+											AdapterConstants.lcAF,
 											"Cannot send message to channel {0}. Received exception: {1}",
 											new Object[] {
 													channel.getObjectId(),
@@ -606,7 +608,7 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 					}
 				} catch (Exception e) {
 					TRACE.catching(SIGNATURE, e);
-					TRACE.errorT(SIGNATURE, AdapterConstants.LogCategoryCONNECT_AF,
+					TRACE.errorT(SIGNATURE, AdapterConstants.lcAF,
 							"SOA.apt_sample.0019",
 							"Cannot access inbound channel configuration. Received exception: "
 									+ e.getMessage());
@@ -621,7 +623,7 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 					}
 				} catch (InterruptedException e1) {
 					TRACE.catching(SIGNATURE, e1);
-					TRACE.errorT(SIGNATURE, AdapterConstants.LogCategoryCONNECT_AF,
+					TRACE.errorT(SIGNATURE, AdapterConstants.lcAF,
 							"SOA.apt_sample.0020",
 							"Inbound thread stopped. Received exception during wait period: "
 									+ e1.getMessage());
@@ -630,7 +632,7 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 			}
 		} finally {
 			Thread.currentThread().setName(oldThreadName);
-			TRACE.debugT(SIGNATURE, AdapterConstants.LogCategoryCONNECT_AF,
+			TRACE.debugT(SIGNATURE, AdapterConstants.lcAF,
 					"Switched thread name back to: {0}",
 					new Object[] { oldThreadName });
 		}
@@ -923,20 +925,20 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 					TRACE
 							.debugT(
 									SIGNATURE,
-									AdapterConstants.LogCategoryCONNECT_AF,
+									AdapterConstants.lcAF,
 									"The adapter specific message attribute (ASMA) {0} was set.",
 									new Object[] { "JCAChannelID" });
 				} else {
 					TRACE
 							.debugT(
 									SIGNATURE,
-									AdapterConstants.LogCategoryCONNECT_AF,
+									AdapterConstants.lcAF,
 									"The adapter specific message attribute (ASMA) {0} was not set since the setting is switched off in the channel configuration.",
 									new Object[] { "JCAChannelID" });
 				}
 				msg.setDocument(xp);
 
-				TRACE.debugT(SIGNATURE, AdapterConstants.LogCategoryCONNECT_AF,
+				TRACE.debugT(SIGNATURE, AdapterConstants.lcAF,
 						"Message object created and filled.");
 
 				ModuleData md = new ModuleData();
@@ -1187,7 +1189,7 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 				}
 			} catch (Exception e) {
 				TRACE.catching(SIGNATURE, e);
-				TRACE.errorT(SIGNATURE, AdapterConstants.LogCategoryCONNECT_AF,
+				TRACE.errorT(SIGNATURE, AdapterConstants.lcAF,
 						"SOA.apt_sample.0032", "Received exception: "
 								+ e.getMessage());
 			}
@@ -1287,7 +1289,7 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 		String SIGNATURE = "start()";
 		TRACE.entering(SIGNATURE);
 		String controlledMcfGuid = getMcfLocalGuid().toHexString();
-		TRACE.infoT(SIGNATURE, AdapterConstants.LogCategoryCONNECT_AF,
+		TRACE.infoT(SIGNATURE, AdapterConstants.lcAF,
 				"MCF with GUID {0} is started now. ({1})", new Object[] {
 						controlledMcfGuid.toString(),
 						SPIManagedConnectionFactory.class.getClassLoader() });
@@ -1299,7 +1301,7 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 			TRACE
 					.errorT(
 							SIGNATURE,
-							AdapterConstants.LogCategoryConnect,
+							AdapterConstants.lcConnect,
 							"SOA.apt_sample.0035",
 							"Unable to access the XI AF audit log. Reason: {0}. Adapter cannot not start the inbound processing!",
 							new Object[] { e });
@@ -1311,7 +1313,7 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 			TRACE
 					.errorT(
 							SIGNATURE,
-							AdapterConstants.LogCategoryConnect,
+							AdapterConstants.lcConnect,
 							"SOA.apt_sample.0036",
 							"Gut null as MessageIDMapper singleton instance. Adapter cannot not start the inbound processing!");
 			TRACE.exiting(SIGNATURE);
@@ -1324,7 +1326,7 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 			TRACE
 					.errorT(
 							SIGNATURE,
-							AdapterConstants.LogCategoryConnect,
+							AdapterConstants.lcConnect,
 							"SOA.apt_sample.0037",
 							"Unable to create XI message factory. Adapter cannot not start the inbound processing!");
 			TRACE.exiting(SIGNATURE);
@@ -1333,12 +1335,12 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 		try {
 			startMCF();
 			startTimer();
-			TRACE.infoT(SIGNATURE, AdapterConstants.LogCategoryCONNECT_AF,
+			TRACE.infoT(SIGNATURE, AdapterConstants.lcAF,
 					"MCF with GUID {0} was started successfully.",
 					new Object[] { controlledMcfGuid.toString() });
 		} catch (Exception e) {
 			TRACE.catching(SIGNATURE, e);
-			TRACE.errorT(SIGNATURE, AdapterConstants.LogCategoryCONNECT_AF,
+			TRACE.errorT(SIGNATURE, AdapterConstants.lcAF,
 					"SOA.apt_sample.0038", "Start of MCF failed. Reason: {0}",
 					new Object[] { e.getMessage() });
 		}
@@ -1362,7 +1364,7 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 		String SIGNATURE = "stop()";
 		TRACE.entering(SIGNATURE);
 		String controlledMcfGuid = getMcfLocalGuid().toHexString();
-		TRACE.infoT(SIGNATURE, AdapterConstants.LogCategoryCONNECT_AF,
+		TRACE.infoT(SIGNATURE, AdapterConstants.lcAF,
 				"The running MCF with GUID {0} will be stopped now",
 				new Object[] { controlledMcfGuid.toString() });
 
@@ -1373,7 +1375,7 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 		} catch (Exception e) {
 			TRACE.catching(SIGNATURE, e);
 		}
-		TRACE.infoT(SIGNATURE, AdapterConstants.LogCategoryCONNECT_AF,
+		TRACE.infoT(SIGNATURE, AdapterConstants.lcAF,
 				"MCF with GUID {0} was stopped successfully.",
 				new Object[] { controlledMcfGuid.toString() });
 		TRACE.exiting(SIGNATURE);
@@ -1388,7 +1390,7 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 }
 
 class XIManagedConnectionFactoryController extends TimerTask {
-	private static final XITrace TRACE = new XITrace(
+	private static final Trace TRACE = new Trace(
 			XIManagedConnectionFactoryController.class.getName());
 	private SPIManagedConnectionFactory controlledMcf;
 
@@ -1406,7 +1408,7 @@ class XIManagedConnectionFactoryController extends TimerTask {
 				controlledMcfGuid = controlledMcf.getMcfLocalGuid()
 						.toHexString();
 			}
-			TRACE.debugT(SIGNATURE, AdapterConstants.LogCategoryCONNECT_AF,
+			TRACE.debugT(SIGNATURE, AdapterConstants.lcAF,
 					"MCF with GUID {0} is running. ({1})", new Object[] {
 							controlledMcfGuid.toString(),
 							XIManagedConnectionFactoryController.class
@@ -1414,7 +1416,7 @@ class XIManagedConnectionFactoryController extends TimerTask {
 
 		} catch (Exception e) {
 			TRACE.catching(SIGNATURE, e);
-			TRACE.warningT(SIGNATURE, AdapterConstants.LogCategoryCONNECT_AF,
+			TRACE.warningT(SIGNATURE, AdapterConstants.lcAF,
 					"Processing of control timer failed. Reason: "
 							+ e.getMessage());
 		}

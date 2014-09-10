@@ -23,10 +23,11 @@ import com.sap.aii.af.service.administration.api.monitoring.ChannelStatusFactory
 import com.sap.aii.af.service.administration.api.monitoring.ChannelUnknownException;
 import com.sap.aii.af.service.cpa.Channel;
 import com.sap.aii.af.service.cpa.Direction;
+import com.sap.aii.af.lib.trace.Trace;
 
 public class XIConfiguration implements ChannelLifecycleCallback, ChannelStatusCallback, LocalizationCallback {
 
-	private static final XITrace TRACE = new XITrace(XIConfiguration.class.getName());
+	private static final Trace TRACE = new Trace(XIConfiguration.class.getName());
 	private String adapterType, adapterNamespace;
 	private List<Channel> outboundChannels = null, inboundChannels = null;
 	private CPALookupManager lookupManager = null;
@@ -46,8 +47,8 @@ public class XIConfiguration implements ChannelLifecycleCallback, ChannelStatusC
 			this.lookupManager = cf.getLookupManager();
 		} catch (Exception e) {
 			TRACE.catching(SIGNATURE, e);
-			TRACE.errorT(SIGNATURE, AdapterConstants.LogCategoryConfig, "SOA.apt_sample.0040", "CPALookupManager cannot be instantiated due to {0}", new Object[] { e.getMessage() });
-			TRACE.errorT(SIGNATURE, AdapterConstants.LogCategoryConfig, "SOA.apt_sample.0041", "No channel configuration can be read, no message exchange possible!");
+			TRACE.errorT(SIGNATURE, AdapterConstants.lcConfig, "SOA.apt_sample.0040", "CPALookupManager cannot be instantiated due to {0}", new Object[] { e.getMessage() });
+			TRACE.errorT(SIGNATURE, AdapterConstants.lcConfig, "SOA.apt_sample.0041", "No channel configuration can be read, no message exchange possible!");
 		}
 		this.adapterType = adapterType;
 		this.adapterNamespace = adapterNamespace;
@@ -67,7 +68,7 @@ public class XIConfiguration implements ChannelLifecycleCallback, ChannelStatusC
 				this.outboundChannels.add(ch);
 		}
 
-		TRACE.infoT(SIGNATURE, AdapterConstants.LogCategoryCONNECT_AF, AFUtil.formatCcLong(ch, " was added"));
+		TRACE.infoT(SIGNATURE, AdapterConstants.lcAF, AFUtil.formatCcLong(ch, " was added"));
 		TRACE.exiting(SIGNATURE);
 	}
 
@@ -87,7 +88,7 @@ public class XIConfiguration implements ChannelLifecycleCallback, ChannelStatusC
 		TRACE.entering(SIGNATURE, new Object[] { ch });
 		List<Channel> channels = null;
 
-		TRACE.infoT(SIGNATURE, AdapterConstants.LogCategoryCONNECT_AF, AFUtil.formatCcLong(ch, " was removed"));
+		TRACE.infoT(SIGNATURE, AdapterConstants.lcAF, AFUtil.formatCcLong(ch, " was removed"));
 
 		String channelID = ch.getObjectId();
 		Direction d = ch.getDirection();
@@ -107,7 +108,7 @@ public class XIConfiguration implements ChannelLifecycleCallback, ChannelStatusC
 						this.mcf.destroyManagedConnection(channelID);
 					} catch (Exception e) {
 						TRACE.catching(SIGNATURE, e);
-						TRACE.warningT(SIGNATURE, AdapterConstants.LogCategoryCONNECT_AF, "The ManagedConnection for channel {0} cannot be destroyed. Configuration update might not work.", new Object[] { channelID });
+						TRACE.warningT(SIGNATURE, AdapterConstants.lcAF, "The ManagedConnection for channel {0} cannot be destroyed. Configuration update might not work.", new Object[] { channelID });
 					}
 				}
 		}
@@ -122,7 +123,7 @@ public class XIConfiguration implements ChannelLifecycleCallback, ChannelStatusC
 		String name = null;
 		this.mcf = mcf;
 		try {
-			this.localizer = XILocalizationUtilities.getLocalizationCallback();
+			this.localizer = XILocalizationUtilities2.getLocalizationCallback();
 			AdapterRegistryFactory arf = AdapterRegistryFactory.getInstance();
 			this.adapterRegistry = arf.getAdapterRegistry();
 			this.adapterRegistry.registerAdapter(this.adapterNamespace, this.adapterType, new AdapterCapability[] { AdapterCapability.PUSH_PROCESS_STATUS }, new AdapterCallback[] { this });
@@ -137,7 +138,7 @@ public class XIConfiguration implements ChannelLifecycleCallback, ChannelStatusC
 			this.outboundChannels = new LinkedList<Channel>();
 			try {
 				List<Channel> allChannels = this.lookupManager.getChannelsByAdapterType(this.adapterType, this.adapterNamespace);
-				TRACE.debugT(SIGNATURE, AdapterConstants.LogCategoryCONNECT_AF, "The XI AAM service returned {0} channels "
+				TRACE.debugT(SIGNATURE, AdapterConstants.lcAF, "The XI AAM service returned {0} channels "
 						+ "for adapter type {1} with namespace {2}", new Object[] { new Integer(allChannels.size()),
 						this.adapterType, this.adapterNamespace });
 				for (int i = 0; i < allChannels.size(); i++) {
@@ -154,7 +155,7 @@ public class XIConfiguration implements ChannelLifecycleCallback, ChannelStatusC
 						// dir = channel.getValueAsString("fileOutDir");
 						// name = channel.getValueAsString("fileOutPrefix");
 					}
-					TRACE.infoT(SIGNATURE, AdapterConstants.LogCategoryCONNECT_AF, "Channel with ID {0} for party {1} and service {2"
+					TRACE.infoT(SIGNATURE, AdapterConstants.lcAF, "Channel with ID {0} for party {1} and service {2"
 							+ "} added (direction is {3}, directory: {4}, name: {5}).", new Object[] {
 							channel.getObjectId(), channel.getParty(), channel.getService(),
 							channel.getDirection().toString(), dir, name });
@@ -250,18 +251,18 @@ public class XIConfiguration implements ChannelLifecycleCallback, ChannelStatusC
 		} catch (Exception e) {
 			TRACE.catching(SIGNATURE, e);
 			cause = e;
-			TRACE.errorT(SIGNATURE, AdapterConstants.LogCategoryConfig, "SOA.apt_sample.0046", "Channel lookup failed due to {0}.", new Object[] { e.getMessage() });
+			TRACE.errorT(SIGNATURE, AdapterConstants.lcConfig, "SOA.apt_sample.0046", "Channel lookup failed due to {0}.", new Object[] { e.getMessage() });
 		}
 		if (!channelFound) {
 			ChannelUnknownException cue = new ChannelUnknownException("Channel with ID " + channelID + " is not known.", cause);
-			TRACE.errorT(SIGNATURE, AdapterConstants.LogCategoryConfig, "SOA.apt_sample.0047", "Channel {0} is not known.", new Object[] { channelID });
+			TRACE.errorT(SIGNATURE, AdapterConstants.lcConfig, "SOA.apt_sample.0047", "Channel {0} is not known.", new Object[] { channelID });
 			TRACE.throwing(SIGNATURE, cue);
 			throw cue;
 		}
 		ChannelStatusFactory csf = ChannelStatusFactory.getInstance();
 		if (csf == null) {
 			ChannelUnknownException cue = new ChannelUnknownException("Internal error: Unable to get instance of ChannelStatusFactory.", cause);
-			TRACE.errorT(SIGNATURE, AdapterConstants.LogCategoryConfig, "SOA.apt_sample.0048", "Unable to get instance of ChannelStatusFactory.");
+			TRACE.errorT(SIGNATURE, AdapterConstants.lcConfig, "SOA.apt_sample.0048", "Unable to get instance of ChannelStatusFactory.");
 			TRACE.throwing(SIGNATURE, cue);
 			throw cue;
 		}
@@ -325,7 +326,7 @@ public class XIConfiguration implements ChannelLifecycleCallback, ChannelStatusC
 			// "CHANNEL_OK!");
 		} catch (Exception e) {
 			TRACE.catching(SIGNATURE, e);
-			TRACE.errorT(SIGNATURE, AdapterConstants.LogCategoryCONNECT_AF, "SOA.apt_sample.0049", "Cannot retrieve status for channel {0}. Received exception: {1}", new Object[] {
+			TRACE.errorT(SIGNATURE, AdapterConstants.lcAF, "SOA.apt_sample.0049", "Cannot retrieve status for channel {0}. Received exception: {1}", new Object[] {
 					channel.getChannelName(), e.getMessage() });
 			cs = csf.createChannelStatus(channel, ChannelState.ERROR, "Cannot retrieve status for this channel due to: "
 					+ e.getMessage());

@@ -1,14 +1,15 @@
 package com.pinternals.nulladapter;
 
 import javax.resource.cci.ResourceAdapterMetaData;
+import com.sap.aii.af.lib.trace.Trace;
 
 public class CCIResourceAdapterMetaData implements ResourceAdapterMetaData {
-	private static final XITrace TRACE = new XITrace(CCIResourceAdapterMetaData.class.getName());
-	private String vendorName = "SAP AG Germany";
-	private String adapterVersion = "1.0";
-	private String specVersion = "1.0";
-	private String adapterName = "XI 3.0 AF Adapter Skeleton";
-	private String description = "Sample adapter for the XI 3.0 Adapter Framework";
+	private static final Trace TRACE = new Trace(CCIResourceAdapterMetaData.class.getName());
+	private String vendorName = AdapterConstants.vendor;
+	private String adapterVersion = AdapterConstants.version;
+	private String specVersion = AdapterConstants.spec_version;
+	private String adapterName = AdapterConstants.ADAPTER_TYPE;
+	private String description = AdapterConstants.ADAPTER_DESC;
 
 	public String getAdapterVersion() {
 		return this.adapterVersion;

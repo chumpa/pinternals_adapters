@@ -17,10 +17,11 @@ import javax.resource.spi.ManagedConnectionFactory;
 import com.sap.aii.af.lib.ra.cci.XIConnectionFactory;
 import com.sap.aii.af.lib.ra.cci.XIConnectionSpec;
 import com.sap.aii.af.lib.ra.cci.XIRecordFactory;
+import com.sap.aii.af.lib.trace.Trace;
 
 public class CCIConnectionFactory implements XIConnectionFactory, Serializable, Referenceable {
-	static final long serialVersionUID = 180419750001L;
-	private static final XITrace TRACE = new XITrace(CCIConnectionFactory.class.getName());
+	private static final long serialVersionUID = -8977772652158473717L;
+	private static final Trace TRACE = new Trace(CCIConnectionFactory.class.getName());
 	
 	private ManagedConnectionFactory mcf = null;
 	private ConnectionManager cm = null;
@@ -43,7 +44,7 @@ public class CCIConnectionFactory implements XIConnectionFactory, Serializable, 
 
 		SPIManagedConnectionFactory smcf = null;
 		if (mcf == null) {
-			TRACE.warningT(SIGNATURE, AdapterConstants.LogCategoryServer, "ManagedConnectionFactory was null, local instance created instead!");
+			TRACE.warningT(SIGNATURE, AdapterConstants.lcServer, "ManagedConnectionFactory was null, local instance created instead!");
 			smcf = new SPIManagedConnectionFactory();
 		} else {
 			if (!(mcf instanceof SPIManagedConnectionFactory)) {
@@ -65,7 +66,7 @@ public class CCIConnectionFactory implements XIConnectionFactory, Serializable, 
 
 		SPIManagedConnectionFactory smcf = null;
 		if (mcf == null) {
-			TRACE.warningT(SIGNATURE, AdapterConstants.LogCategoryServer, "ManagedConnectionFactory was null, local instance created instead!");
+			TRACE.warningT(SIGNATURE, AdapterConstants.lcServer, "ManagedConnectionFactory was null, local instance created instead!");
 			smcf = new SPIManagedConnectionFactory();
 		} else {
 			if (!(mcf instanceof SPIManagedConnectionFactory)) {
@@ -78,7 +79,7 @@ public class CCIConnectionFactory implements XIConnectionFactory, Serializable, 
 		this.mcf = smcf;
 		this.rf = new XIMessageFactoryImpl(smcf.getAdapterType(), smcf.getAdapterNamespace());
 		if (cm == null) {
-			TRACE.warningT(SIGNATURE, AdapterConstants.LogCategoryServer, "ConnectionManager was null, local instance created instead (two-tier)!");
+			TRACE.warningT(SIGNATURE, AdapterConstants.lcServer, "ConnectionManager was null, local instance created instead (two-tier)!");
 			this.cm = new SPIConnectionManager();
 		} else {
 			this.cm = cm;

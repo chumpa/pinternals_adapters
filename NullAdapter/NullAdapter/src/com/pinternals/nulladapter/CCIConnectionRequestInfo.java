@@ -1,9 +1,10 @@
 package com.pinternals.nulladapter;
 
 import javax.resource.spi.ConnectionRequestInfo;
+import com.sap.aii.af.lib.trace.Trace;
 
 public class CCIConnectionRequestInfo implements ConnectionRequestInfo {
-	private static final XITrace TRACE = new XITrace(CCIConnectionRequestInfo.class.getName());
+	private static final Trace TRACE = new Trace(CCIConnectionRequestInfo.class.getName());
 	private String userName;
 	private String password;
 	private String channelId;
