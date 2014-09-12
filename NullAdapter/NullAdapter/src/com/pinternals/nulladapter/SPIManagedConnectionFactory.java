@@ -43,16 +43,13 @@ import com.sap.guid.GUID;
 public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 		Serializable, Runnable, ManagedConnectionFactoryActivation {
 	
+	private static final Trace TRACE = new Trace(SPIManagedConnectionFactory.class.getName());
 	private static final long serialVersionUID = 2048446881865672258L;
+
+	
 	// probably required for callers
 	public static final String JNDI_NAME = AdapterConstants.JNDI_NAME;
-	private static final Trace TRACE = new Trace(SPIManagedConnectionFactory.class.getName());
-
-	// Всякие утилиты
-	AFUtil utl = null;
-
-	// // 1. Синхронизатор для конструктора
-	// private static Object synchronizer = new Object();
+	private AFUtil utl = null;
 
 	private int threadStatus = 0;
 
@@ -62,12 +59,11 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 	private AuditAccess audit = null;
 	private Timer controlTimer = new Timer();
 	transient PrintWriter logWriter;
-	private XIConfiguration xIConfiguration = null;
+	private XICfg xIConfiguration = null;
 	private Map managedConnections = Collections.synchronizedMap(new HashMap());
 	private transient MessageIDMapper messageIDMapper = null;
 	static final String AS_ACTIVE = "active";
 	static final String AS_INACTIVE = "inactive";
-//	private String addressMode = null;
 	public String adapterType = AdapterConstants.ADAPTER_TYPE;
 	public String adapterNamespace = AdapterConstants.ADAPTER_NAMESPACE;
 	private int propWaitNum = 10;
@@ -475,7 +471,7 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 			}
 			if (xIConfiguration == null) {
 				try {
-					xIConfiguration = new XIConfiguration(adapterType,
+					xIConfiguration = new XICfg(adapterType,
 							adapterNamespace);
 					xIConfiguration.init(this);
 				} catch (Exception e) {
@@ -1408,3 +1404,19 @@ class XIManagedConnectionFactoryController extends TimerTask {
 		TRACE.exiting(SIGNATURE);
 	}
 }
+
+
+//InitialContext b = new InitialContext();
+//ApplicationPropertiesAccess appCfgProps = (ApplicationPropertiesAccess)b.lookup("ApplicationConfiguration");
+////appCfgProps = (ApplicationPropertiesAccess)this.ctx.lookup("ApplicationConfiguration"); 
+//Properties appProps = appCfgProps.getApplicationProperties();
+//if (appProps!=null)
+//	TRACE.fatalT(SIGNATURE, "!null.username=" + appProps.getProperty("null.username"));
+//else {
+//	appProps = appCfgProps.getSystemProfile();
+//	StringBuilder sb = new StringBuilder();
+//	for (Object z: appProps.keySet()) {
+//		sb.append((String)z + "=" + appProps.getProperty((String)z) + ";\n");
+//	}
+//	TRACE.fatalT(SIGNATURE, "!Can't get properties. appCfgProps="+appCfgProps + ";\n system=" + sb.toString());
+//}
