@@ -2,6 +2,67 @@
 <AdapterTypeMetaData version="731">
   <GuiHandlerClassName/>
   <Type>NullAdapter</Type>
+
+  <!-- -->
+
+  <Inbound>
+    <TransportProtocol>
+      <Name>NONE</Name>
+      <Version>0</Version>
+      <GuiLabels>
+        <Label language="EN">NONE</Label>
+      </GuiLabels>
+      <ValidMessageProtocols>
+        <ProtocolIdentifier>
+          <Name>XML</Name>
+          <Version>0</Version>
+        </ProtocolIdentifier>
+      </ValidMessageProtocols>
+      <ChannelAttributes/>
+      <SecurityAttributes/>
+    </TransportProtocol>
+    <MessageProtocol>
+      <Name>XML</Name>
+      <Version>0</Version>
+      <GuiLabels>
+        <Label language="EN">XML</Label>
+      </GuiLabels>
+      <SecurityAttributes/>
+      <ModuleProcessorAttributes>
+        <ModuleSequence>
+          <ModuleSequenceItem>
+            <Name>localejbs/CallSapAdapter</Name>
+            <Type>local</Type>
+            <Key>exit</Key>
+          </ModuleSequenceItem>
+        </ModuleSequence>
+      </ModuleProcessorAttributes>
+    </MessageProtocol>
+    <GlobalChannelAttributes>
+      <AttributeGroup>
+        <Name>comment</Name>
+        <GuiLabels>
+          <Label language="EN">Proof of concept</Label>
+        </GuiLabels>
+        <AttributeReference>
+          <ReferenceName>comment</ReferenceName>
+        </AttributeReference>
+      </AttributeGroup>
+      
+      <AttributeGroup>
+        <Name>status</Name>
+        <GuiLabels>
+          <Label language="EN">Adapter Status</Label>
+        </GuiLabels>
+        <AttributeReference>
+          <ReferenceName>adapterStatus</ReferenceName>
+        </AttributeReference>
+      </AttributeGroup>
+    </GlobalChannelAttributes>
+  </Inbound>
+  
+  <!-- -->
+
   <Outbound>
     <TransportProtocol>
       <Name>NONE</Name>
@@ -38,6 +99,15 @@
     </MessageProtocol>
     <GlobalChannelAttributes>
       <AttributeGroup>
+        <Name>comment</Name>
+        <GuiLabels>
+          <Label language="EN">Proof of concept</Label>
+        </GuiLabels>
+        <AttributeReference>
+          <ReferenceName>comment</ReferenceName>
+        </AttributeReference>
+      </AttributeGroup>
+      <AttributeGroup>
         <Name>Status</Name>
         <GuiLabels>
           <Label language="EN">Adapter Status</Label>
@@ -48,57 +118,15 @@
       </AttributeGroup>
     </GlobalChannelAttributes>
   </Outbound>
-  <Inbound>
-    <TransportProtocol>
-      <Name>NONE</Name>
-      <Version>0</Version>
-      <GuiLabels>
-        <Label language="EN">NONE</Label>
-      </GuiLabels>
-      <ValidMessageProtocols>
-        <ProtocolIdentifier>
-          <Name>XML</Name>
-          <Version>0</Version>
-        </ProtocolIdentifier>
-      </ValidMessageProtocols>
-      <ChannelAttributes/>
-      <SecurityAttributes/>
-    </TransportProtocol>
-    <MessageProtocol>
-      <Name>XML</Name>
-      <Version>0</Version>
-      <GuiLabels>
-        <Label language="EN">XML</Label>
-      </GuiLabels>
-      <SecurityAttributes/>
-      <ModuleProcessorAttributes>
-        <ModuleSequence>
-          <ModuleSequenceItem>
-            <Name>localejbs/CallSapAdapter</Name>
-            <Type>local</Type>
-            <Key>exit</Key>
-          </ModuleSequenceItem>
-        </ModuleSequence>
-      </ModuleProcessorAttributes>
-    </MessageProtocol>
-    <GlobalChannelAttributes>
-      <AttributeGroup>
-        <Name>status</Name>
-        <GuiLabels>
-          <Label language="EN">Adapter Status</Label>
-        </GuiLabels>
-        <AttributeReference>
-          <ReferenceName>adapterStatus</ReferenceName>
-        </AttributeReference>
-      </AttributeGroup>
-    </GlobalChannelAttributes>
-  </Inbound>
+
+  <!-- -->
+
   <Attribute>
     <Name>adapterStatus</Name>
     <Usage>required</Usage>
     <Default>active</Default>
     <DataType>xsd:string</DataType>
-    <Length>10</Length>
+    <Length>0</Length>
     <GuiLabels>
       <Label language="EN">Adapter Status</Label>
     </GuiLabels>
@@ -115,4 +143,16 @@
       </GuiLabels>
     </FixedValue>
   </Attribute>
+
+  <Attribute>
+    <Name>comment</Name>
+    <Usage>optional</Usage>
+    <Default>comment ...</Default>
+    <DataType>xsd:string</DataType>
+    <Length>120</Length>
+    <GuiLabels>
+      <Label language="EN">comment</Label>
+    </GuiLabels>
+  </Attribute>
+  
 </AdapterTypeMetaData>

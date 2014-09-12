@@ -1,19 +1,20 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<application-j2ee-engine xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="application-j2ee-engine.xsd">
-
-<reference 
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<application-j2ee-engine 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	xsi:noNamespaceSchemaLocation="application-j2ee-engine.xsd">
+	<reference 
 		reference-type="hard">
 		<reference-target 
 			provider-name="sap.com" 
 			target-type="service">engine.service.facade</reference-target>
 	</reference>
-<reference
+	<reference 
 		reference-type="hard">
 		<reference-target 
 			provider-name="sap.com" 
 			target-type="service">engine.application.facade</reference-target>
 	</reference>
-<reference 
+	<reference 
 		reference-type="hard">
 		<reference-target 
 			provider-name="sap.com" 
@@ -55,9 +56,11 @@
 			provider-name="sap.com" 
 			target-type="library">com.sap.base.technology.facade</reference-target>
 	</reference>
-<reference reference-type="hard">
-    <reference-target provider-name="sap.com" target-type="service">tc~je~appconfiguration~api</reference-target>
-</reference>
-
+	<reference 
+		reference-type="weak">
+		<reference-target 
+			provider-name="sap.com" 
+			target-type="service">tc~je~appconfiguration~api</reference-target>
+	</reference>
 	<provider-name>sap.com</provider-name>
 </application-j2ee-engine>
