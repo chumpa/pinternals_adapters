@@ -8,10 +8,10 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
-
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.resource.ResourceException;
@@ -21,7 +21,6 @@ import javax.resource.spi.ManagedConnection;
 import javax.resource.spi.ManagedConnectionFactory;
 import javax.resource.spi.security.PasswordCredential;
 import javax.security.auth.Subject;
-
 import com.pinternals.AFUtil;
 import com.sap.aii.af.lib.mp.module.ModuleData;
 import com.sap.aii.af.lib.mp.processor.ModuleProcessor;
@@ -32,6 +31,8 @@ import com.sap.aii.af.service.cpa.CPAObjectType;
 import com.sap.aii.af.service.cpa.Channel;
 import com.sap.aii.af.service.cpa.Direction;
 import com.sap.aii.af.service.idmap.MessageIDMapper;
+import com.sap.aii.af.service.resource.SAPAdapterResources;
+import com.sap.aii.af.service.util.transaction.api.TxManager;
 import com.sap.engine.interfaces.connector.ManagedConnectionFactoryActivation;
 import com.sap.engine.interfaces.messaging.api.DeliverySemantics;
 import com.sap.engine.interfaces.messaging.api.Message;
@@ -42,68 +43,83 @@ import com.sap.guid.GUID;
 
 public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 		Serializable, Runnable, ManagedConnectionFactoryActivation {
-	
 	private static final Trace TRACE = new Trace(SPIManagedConnectionFactory.class.getName());
 	private static final long serialVersionUID = 2048446881865672258L;
 
-	
 	// probably required for callers
-	public static final String JNDI_NAME = AdapterConstants.JNDI_NAME;
-	private AFUtil utl = null;
-
-	private int threadStatus = 0;
-
+	public static final String JNDI_NAME = XIConst.JNDI_NAME;
+	public String adapterType = XIConst.ADAPTER_TYPE;
+	public String adapterNamespace = XIConst.ADAPTER_NS;
+	
+	private Timer timer = new Timer();
+	private XICfg xiCfg = null;
+	public String nickName = null, nickGuid = null;
+//	private AFUtil utl = null;
+	protected int threadStatus = 0;
 	private static int waitTime = 5000;
+	
 	private transient XIMessageFactoryImpl mf = null;
-
 	private AuditAccess audit = null;
-	private Timer controlTimer = new Timer();
 	transient PrintWriter logWriter;
-	private XICfg xIConfiguration = null;
 	private Map managedConnections = Collections.synchronizedMap(new HashMap());
 	private transient MessageIDMapper messageIDMapper = null;
 	static final String AS_ACTIVE = "active";
 	static final String AS_INACTIVE = "inactive";
-	public String adapterType = AdapterConstants.ADAPTER_TYPE;
-	public String adapterNamespace = AdapterConstants.ADAPTER_NAMESPACE;
 	private int propWaitNum = 10;
-
 	private int propWaitTime = 1000;
+	private static final long DELAY1 = 1000 * 1000 * 60 * 2,
+			DELAYP = 1000 * 1000 * 60 * 2;
+
+	private InitialContext ctx = null;
+	private SAPAdapterResources msRes = null;
+	private GUID mcfLocalGuid = null;
+	private TxManager txMgr = null;
+
 	public SPIManagedConnectionFactory() throws ResourceException {
-		String SIGNATURE = "SpiManagedConnectionFactory()";
-		TRACE.entering(SIGNATURE);
+		String SIGNATURE = "SPIManagedConnectionFactory()";
+		TRACE.entering(SIGNATURE, nickName);
+		if (nickName==null) {
+			nickName = generateNick();
+			TRACE.entering(SIGNATURE, nickName);
+		}
 		try {
-			utl = new AFUtil();
+			this.ctx = new InitialContext();
+			this.msRes = ((SAPAdapterResources) ctx.lookup("SAPAdapterResources"));
+	        this.txMgr = this.msRes.getTransactionManager();
+
+			synchronized (this) {
+				mcfLocalGuid = new GUID();
+				nickGuid = nickName + "/" + mcfLocalGuid;
+			}
 		} catch (NamingException e) {
 			TRACE.catching(SIGNATURE, e);
-			TRACE.errorT(SIGNATURE, AdapterConstants.lcAF,
-					"MCA:SPMCF:106", "Cannot reach 'SAPAdapterResources'");
+			throw new ResourceException(e);
+//			TRACE.errorT(SIGNATURE, AdapterConstants.lcAF, "", "Cannot reach 'SAPAdapterResources'");
 		}
-		synchronized (utl) {
-			utl.getLocalGuid(TRACE, SIGNATURE);
-		}
-		TRACE.exiting(SIGNATURE);
+//		synchronized (this) {
+//			utl.getLocalGuid(TRACE, SIGNATURE);
+//		}
+		
+		TRACE.infoT(SIGNATURE, XIConst.lcAF, "", nickGuid);
+		TRACE.exiting(SIGNATURE, nickGuid);
 	}
 
 	private ModuleProcessor lookUpModuleProcessor(int retryNum)
 			throws ResourceException {
 		String SIGNATURE = "lookUpModuleProcessor()";
-		TRACE.entering(SIGNATURE);
+		TRACE.entering(SIGNATURE, nickGuid);
 		String err = "Cannot get access to the XI AF module processor. Ejb might not have been started yet.";
 		ModuleProcessor mp = null;
 		try {
-			mp = ModuleProcessorFactory.getModuleProcessor(true, retryNum,
-					propWaitTime);
+			mp = ModuleProcessorFactory.getModuleProcessor(true, retryNum, propWaitTime);
 		} catch (Exception e) {
 			TRACE.catching(SIGNATURE, e);
-			TRACE.errorT(SIGNATURE, AdapterConstants.lcAF,
-					"MCA:SPMCF:116", err);
+			TRACE.errorT(SIGNATURE, XIConst.lcAF, "MCA:SPMCF:116", err);
 			ResourceException re = new ResourceException(err);
 			throw re;
 		}
-		TRACE.debugT(SIGNATURE, AdapterConstants.lcAF,
-				"Lookup of XI AF MP entry ejb was succesfully.");
-		TRACE.exiting(SIGNATURE);
+		TRACE.debugT(SIGNATURE, XIConst.lcAF, "Lookup of XI AF MP entry ejb was succesfully.");
+		TRACE.exiting(SIGNATURE, nickGuid);
 		return mp;
 	}
 
@@ -130,47 +146,32 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 		TRACE.entering(SIGNATURE, new Object[] { subject, info });
 		String channelID = null;
 		Channel channel = null;
-
 		SPIManagedConnection mc = null;
 		if (!(info instanceof CCIConnectionRequestInfo)) {
-			TRACE
-					.errorT(SIGNATURE, AdapterConstants.lcAF,
-							"MCA:SPMCF:150",
-							"Received an unknown ConnectionRequestInfo. Cannot determine channelId!");
-			ResourceException re = new ResourceException(
-					"Received an unknown ConnectionRequestInfo. Cannot determine channelId!");
+			TRACE.errorT(SIGNATURE, XIConst.lcAF, "MCA:SPMCF:150", "Received an unknown ConnectionRequestInfo. Cannot determine channelId!");
+			ResourceException re = new ResourceException("Received an unknown ConnectionRequestInfo. Cannot determine channelId!");
 			TRACE.throwing(SIGNATURE, re);
 			throw re;
 		}
 		try {
 			channelID = ((CCIConnectionRequestInfo) info).getChannelId();
-			channel = (Channel) CPAFactory.getInstance().getLookupManager()
-					.getCPAObject(CPAObjectType.CHANNEL, channelID);
+			channel = (Channel) CPAFactory.getInstance().getLookupManager().getCPAObject(CPAObjectType.CHANNEL, channelID);
 		} catch (Exception e) {
 			TRACE.catching(SIGNATURE, e);
-			TRACE
-					.errorT(
-							SIGNATURE,
-							AdapterConstants.lcAF,
-							"MCA:SPMCF:160",
-							"Cannot access the channel parameters of channel: "
-									+ channelID
-									+ ". Check whether the channel is stopped in the administrator console.");
-			ResourceException re = new ResourceException(
-					"Cannot access the channel parameters of channel: "
-							+ channelID
-							+ ". Check whether the channel is stopped in the administrator console.");
+			TRACE.errorT(SIGNATURE, XIConst.lcAF, "MCA:SPMCF:160", "Cannot access the channel parameters of channel: "
+					+ channelID
+					+ ". Check whether the channel is stopped in the administrator console.");
+			ResourceException re = new ResourceException("Cannot access the channel parameters of channel: "
+					+ channelID
+					+ ". Check whether the channel is stopped in the administrator console.");
 			throw re;
 		}
-		PasswordCredential credential = XISecurityUtilities
-				.getPasswordCredential(this, subject, info);
-		mc = new SPIManagedConnection(this, credential, false, channelID,
-				channel);
+		PasswordCredential credential = XISecurityUtilities.getPasswordCredential(this, subject, info);
+		mc = new SPIManagedConnection(this, credential, false, channelID, channel);
 		if (mc != null) {
 			// managedConnections.put(channelID, mc);
-			TRACE.debugT(SIGNATURE, AdapterConstants.lcAF,
-					"For channelID {0} this managed connection is stored: {1}",
-					new Object[] { channelID, mc });
+			TRACE.debugT(SIGNATURE, XIConst.lcAF, "For channelID {0} this managed connection is stored: {1}", new Object[] {
+					channelID, mc });
 		}
 		TRACE.exiting(SIGNATURE);
 		return mc;
@@ -186,23 +187,14 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 				mc.sendEvent(1, null, mc);
 				managedConnections.remove(channelID);
 				mc.destroy(true);
-				TRACE
-						.debugT(
-								SIGNATURE,
-								AdapterConstants.lcAF,
-								"ManagedConnection for channel ID {0} found and destroyed.",
-								new Object[] { channelID });
+				TRACE.debugT(SIGNATURE, XIConst.lcAF, "ManagedConnection for channel ID {0} found and destroyed.", new Object[] { channelID });
 			} else {
-				TRACE.warningT(SIGNATURE, AdapterConstants.lcAF,
-						"ManagedConnection for channel ID {0} not found.",
-						new Object[] { channelID });
+				TRACE.warningT(SIGNATURE, XIConst.lcAF, "ManagedConnection for channel ID {0} not found.", new Object[] { channelID });
 			}
 		} catch (Exception e) {
 			TRACE.catching(SIGNATURE, e);
-			TRACE.errorT(SIGNATURE, AdapterConstants.lcAF,
-					"MCA:SPMCF:193",
-					"Received exception during ManagedConnection destroy: "
-							+ e.getMessage());
+			TRACE.errorT(SIGNATURE, XIConst.lcAF, "MCA:SPMCF:193", "Received exception during ManagedConnection destroy: "
+					+ e.getMessage());
 		}
 		TRACE.exiting(SIGNATURE);
 	}
@@ -218,20 +210,14 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 			Subject subject, ConnectionRequestInfo info)
 			throws ResourceException {
 		String SIGNATURE = "matchManagedConnections(Set connectionSet, Subject subject, ConnectionRequestInfo info)";
-		TRACE
-				.entering(SIGNATURE, new Object[] { connectionSet, subject,
-						info });
-
+		TRACE.entering(SIGNATURE, new Object[] { connectionSet, subject, info });
 		SPIManagedConnection mcFound = null;
 		CCIConnectionRequestInfo cciInfo = null;
-		PasswordCredential pc = XISecurityUtilities.getPasswordCredential(this,
-				subject, info);
+		PasswordCredential pc = XISecurityUtilities.getPasswordCredential(this, subject, info);
 		if ((info instanceof CCIConnectionRequestInfo)) {
 			cciInfo = (CCIConnectionRequestInfo) info;
 		} else {
-			TRACE
-					.errorT(SIGNATURE, AdapterConstants.lcAF,
-							"Unknown ConnectionRequestInfo parameter received. Cannot match connection");
+			TRACE.errorT(SIGNATURE, XIConst.lcAF, "Unknown ConnectionRequestInfo parameter received. Cannot match connection");
 			return null;
 		}
 		Iterator it = connectionSet.iterator();
@@ -240,35 +226,20 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 			if ((obj instanceof SPIManagedConnection)) {
 				SPIManagedConnection mc = (SPIManagedConnection) obj;
 				if (!mc.isDestroyed()) {
-					ManagedConnectionFactory mcf = mc
-							.getManagedConnectionFactory();
-					if ((XISecurityUtilities.isPasswordCredentialEqual(mc
-							.getPasswordCredential(), pc))
+					ManagedConnectionFactory mcf = mc.getManagedConnectionFactory();
+					if ((XISecurityUtilities.isPasswordCredentialEqual(mc.getPasswordCredential(), pc))
 							&& (mcf.equals(this))
-							&& (mc.getChannelID().equalsIgnoreCase(cciInfo
-									.getChannelId()))) {
+							&& (mc.getChannelID().equalsIgnoreCase(cciInfo.getChannelId()))) {
 						mcFound = mc;
-						TRACE
-								.debugT(
-										SIGNATURE,
-										AdapterConstants.lcConnect,
-										"Found existing ManagedConnection in container set for channel {0}.",
-										new Object[] { mc.getChannelID() });
+						TRACE.debugT(SIGNATURE, XIConst.lcConnect, "Found existing ManagedConnection in container set for channel {0}.", new Object[] { mc.getChannelID() });
 					} else {
-						TRACE
-								.debugT(SIGNATURE,
-										AdapterConstants.lcConnect,
-										"ManagedConnection in container set does not fit. Ignore.");
+						TRACE.debugT(SIGNATURE, XIConst.lcConnect, "ManagedConnection in container set does not fit. Ignore.");
 					}
 				} else {
-					TRACE
-							.debugT(SIGNATURE, AdapterConstants.lcConnect,
-									"Destroyed sample ManagedConnection in container set. Ignore.");
+					TRACE.debugT(SIGNATURE, XIConst.lcConnect, "Destroyed sample ManagedConnection in container set. Ignore.");
 				}
 			} else {
-				TRACE
-						.debugT(SIGNATURE, AdapterConstants.lcConnect,
-								"This is not a sample ManagedConnection in container set. Ignore.");
+				TRACE.debugT(SIGNATURE, XIConst.lcConnect, "This is not a sample ManagedConnection in container set. Ignore.");
 			}
 		}
 		TRACE.exiting(SIGNATURE);
@@ -278,10 +249,8 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 	public void setLogWriter(PrintWriter out) throws ResourceException {
 		String SIGNATURE = "setLogWriter(PrintWriter out)";
 		TRACE.entering(SIGNATURE, new Object[] { out });
-		out
-				.print("XI AF Sample Adapter has received a J2EE container log writer.");
-		out
-				.print("XI AF Sample Adapter will not use the J2EE container log writer. See the trace file for details.");
+		out.print("XI AF Sample Adapter has received a J2EE container log writer.");
+		out.print("XI AF Sample Adapter will not use the J2EE container log writer. See the trace file for details.");
 		logWriter = out;
 		TRACE.exiting(SIGNATURE);
 	}
@@ -318,15 +287,14 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 	// TRACE.exiting("getFileName()");
 	// return fileName;
 	// }
-
 	public boolean equals(Object obj) {
 		String SIGNATURE = "equals(Object obj)";
 		TRACE.entering(SIGNATURE, new Object[] { obj });
 		boolean equal = false;
 		if ((obj instanceof SPIManagedConnectionFactory)) {
 			SPIManagedConnectionFactory other = (SPIManagedConnectionFactory) obj;
-			if (adapterNamespace.equals(other.adapterNamespace) &&
-					adapterType.equals(other.adapterType)) {
+			if (adapterNamespace.equals(other.adapterNamespace)
+					&& adapterType.equals(other.adapterType)) {
 				equal = true;
 			}
 		}
@@ -347,109 +315,87 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 	// public static int getFileCounter() {
 	// return fileCounter;
 	// }
-
 	public void startMCF() throws ResourceException {
 		String SIGNATURE = "startMCF()";
-		TRACE.entering(SIGNATURE);
+		TRACE.entering(SIGNATURE, nickGuid);
 		if (threadStatus != 1) {
 			try {
 				threadStatus = 1;
-				utl.msRes.startRunnable(this);
+				this.msRes.startRunnable(this);
 			} catch (Exception e) {
 				TRACE.catching(SIGNATURE, e);
 				threadStatus = 2;
-				TRACE.errorT(SIGNATURE, AdapterConstants.lcAF,
-						"SOA.apt_sample.0016",
-						"Cannot start inbound message thread");
+				TRACE.errorT(SIGNATURE, XIConst.lcAF, "", "Cannot start inbound message thread");
 				ResourceException re = new ResourceException(e.getMessage());
 				TRACE.throwing(SIGNATURE, re);
 				throw re;
 			}
 		}
-		TRACE.exiting(SIGNATURE);
+		TRACE.exiting(SIGNATURE, nickGuid);
 	}
 
 	public void stopMCF() throws ResourceException {
 		String SIGNATURE = "stopMCF()";
-		TRACE.entering(SIGNATURE);
-
+		TRACE.entering(SIGNATURE, nickGuid);
 		threadStatus = 2;
 		try {
 			synchronized (this) {
 				notify();
 				wait(waitTime + 1000);
 			}
-			xIConfiguration.stop();
+			xiCfg.stop();
 		} catch (Exception e) {
 			TRACE.catching(SIGNATURE, e);
-			TRACE.errorT(SIGNATURE, AdapterConstants.lcAF,
-					"SOA.apt_sample.0017",
-					"Cannot stop inbound message thread. Reason: "
-							+ e.getMessage());
+			TRACE.errorT(SIGNATURE, XIConst.lcAF, "", "Cannot stop inbound message thread. Reason: "
+					+ e.getMessage());
 			ResourceException re = new ResourceException(e.getMessage());
 			TRACE.throwing(SIGNATURE, re);
 			throw re;
 		}
-		TRACE.exiting(SIGNATURE);
+		TRACE.exiting(SIGNATURE, nickGuid);
 	}
 
-	public void startTimer() {
+	public void startTimer123() {
 		String SIGNATURE = "startTimer()";
-		TRACE.entering(SIGNATURE);
-		if (utl.mcfLocalGuid != null) {
+		TRACE.entering(SIGNATURE, nickGuid);
+		if (this.mcfLocalGuid != null) {
 			try {
-				controlTimer
-						.scheduleAtFixedRate(
-								new XIManagedConnectionFactoryController(this,
-										utl.ctx), 120000L, 60000L);
+				timer.scheduleAtFixedRate(new XIMCFController(this, this.ctx), DELAY1, DELAYP);
 			} catch (Exception e) {
 				TRACE.catching(SIGNATURE, e);
-				TRACE
-						.debugT(
-								SIGNATURE,
-								AdapterConstants.lcAF,
-								"Creation of MCF controller failed. No periodic MCF status reports available! Reason: "
-										+ e.getMessage());
+				TRACE.debugT(SIGNATURE, XIConst.lcAF, "Creation of MCF controller failed. No periodic MCF status reports available! Reason: "
+						+ e.getMessage());
 			}
 		}
-		TRACE.exiting(SIGNATURE);
+		TRACE.exiting(SIGNATURE, nickGuid);
 	}
 
-	public void stopTimer() {
+	public void stopTimer123() {
 		String SIGNATURE = "stopTimer()";
 		TRACE.entering(SIGNATURE);
-		controlTimer.cancel();
+		timer.cancel();
 		TRACE.exiting(SIGNATURE);
 	}
 
 	public void run() {
 		String SIGNATURE = "run()";
-		TRACE.entering(SIGNATURE);
-
+		TRACE.entering(SIGNATURE, nickGuid);
 		String oldThreadName = Thread.currentThread().getName();
-		String newThreadName = "Null_" + utl.mcfLocalGuid;
-
+		String newThreadName = "Null_" + nickGuid;
 		try {
 			InitialContext ctx = new InitialContext();
-
 			Thread.currentThread().setName(newThreadName);
-			TRACE.debugT(SIGNATURE, AdapterConstants.lcAF,
-					"Switched thread name to: {0}",
-					new Object[] { newThreadName });
-
+			TRACE.debugT(SIGNATURE, XIConst.lcAF, "Switched thread name to: {0}", new Object[] { newThreadName });
 			boolean notSet = true;
 			int numTry = 0;
 			int pollTime = -1;
 			while ((notSet) && (numTry < propWaitNum)) {
-				if ((adapterType != null)
-						&& (adapterNamespace != null)) {
+				if ((adapterType != null) && (adapterNamespace != null)) {
 					notSet = false;
 				}
 				numTry++;
-				TRACE.debugT(SIGNATURE, AdapterConstants.lcAF,
-						"MCF waits for setter completion. Try: {0} of {1}.",
-						new Object[] { Integer.toString(numTry),
-								Integer.toString(propWaitNum) });
+				TRACE.debugT(SIGNATURE, XIConst.lcAF, "MCF waits for setter completion. Try: {0} of {1}.", new Object[] {
+						Integer.toString(numTry), Integer.toString(propWaitNum) });
 				try {
 					Thread.sleep(propWaitTime);
 				} catch (Exception e) {
@@ -461,135 +407,115 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 				mp = lookUpModuleProcessor(propWaitNum);
 			} catch (Exception e) {
 				TRACE.catching(SIGNATURE, e);
-				TRACE
-						.errorT(
-								SIGNATURE,
-								AdapterConstants.lcAF,
-								"Cannot instatiate the NullAdapter module processor bean. The inbound processing is stopped. Exception:"
-										+ e.toString());
+				TRACE.errorT(SIGNATURE, XIConst.lcAF, "Cannot instatiate the NullAdapter module processor bean. The inbound processing is stopped. Exception:"
+						+ e.toString());
 				threadStatus = 2;
 			}
-			if (xIConfiguration == null) {
+			if (xiCfg == null) {
 				try {
-					xIConfiguration = new XICfg(adapterType,
-							adapterNamespace);
-					xIConfiguration.init(this);
+					xiCfg = new XICfg(adapterType, adapterNamespace);
+					xiCfg.init(this);
 				} catch (Exception e) {
 					TRACE.catching(SIGNATURE, e);
-					TRACE
-							.errorT(
-									SIGNATURE,
-									AdapterConstants.lcAF,
-									"SOA.apt_sample.0018",
-									"Cannot instatiate the XI CPA handler. The inbound processing is stopped. Exception:"
-											+ e.toString());
+					TRACE.errorT(SIGNATURE, XIConst.lcAF, "", "Cannot instatiate the XI CPA handler. The inbound processing is stopped. Exception:"
+							+ e.toString());
 					threadStatus = 2;
 				}
 			}
 			while (threadStatus == 1) {
 				try {
-					List<Channel> channels = xIConfiguration
-							.getCopy(Direction.INBOUND);
+					List<Channel> channels = xiCfg.getCopy(Direction.INBOUND);
 					for (int i = 0; i < channels.size(); i++) {
 						Channel channel = (Channel) channels.get(i);
 						try {
-//							String processMode = null;
-//							String qos = null;
-//							String psec = null;
-//							String raiseError = null;
-//							String channelAddressMode = null;
-//							boolean set_asma = false;
-
-//							try {
-//								qos = channel.getValueAsString("qos");
-//								psec = channel.getValueAsString("pollInterval");
-//							} catch (Exception e) {
-//								TRACE.catching(SIGNATURE, e);
-//							}
-							int ptime = 60*1000*1000;
-//							if ((psec != null) && (psec.length() > 0)) {
-//								ptime = Integer.valueOf(psec).intValue() * 1000;
-//							}
-//							if ((pollTime < 0) || (ptime < pollTime)) {
-//								pollTime = ptime;
-//							}
+							// String processMode = null;
+							// String qos = null;
+							// String psec = null;
+							// String raiseError = null;
+							// String channelAddressMode = null;
+							// boolean set_asma = false;
+							// try {
+							// qos = channel.getValueAsString("qos");
+							// psec = channel.getValueAsString("pollInterval");
+							// } catch (Exception e) {
+							// TRACE.catching(SIGNATURE, e);
+							// }
+							int ptime = 60 * 1000 * 1000;
+							// if ((psec != null) && (psec.length() > 0)) {
+							// ptime = Integer.valueOf(psec).intValue() * 1000;
+							// }
+							// if ((pollTime < 0) || (ptime < pollTime)) {
+							// pollTime = ptime;
+							// }
 							// sendMessageFromFile("/dev/null", channel,
 							// processMode, qos, raiseError, channelAddressMode,
 							// set_asma);
 							// test code
-//							TRACE.warningT(SIGNATURE,
-//									AdapterConstants.lcAF,
-//									"Code for polling Mail Sender @@@");
-
-//							Session ses = (Session) ctx.lookup("java:comp/env/mail/MailSession");
-//							TRACE.debugT(SIGNATURE, "Session:" + ses + " "
-//									+ ses.getStore().toString());
-//							Store st = ses.getStore("imaps");
-//							st.connect();
-//							Folder f = st.getDefaultFolder();
-//							int mc;
-//							TRACE.debugT(SIGNATURE,
-//									"Store: {0}, Folder: {1},{2}",
-//									new Object[] { st, f, f.getFullName() });
-//
-//							f = st.getFolder("INBOX");
-//							mc = f.getMessageCount();
-//							TRACE
-//									.debugT(
-//											SIGNATURE,
-//											"Store: {0}, Folder: {1}, messages count: {2}",
-//											new Object[] { st, f, mc });
-//
-//							f = st.getFolder("INBOX/CurrencyRates");
-//							mc = f.getMessageCount();
-//							TRACE
-//									.debugT(
-//											SIGNATURE,
-//											"Store: {0}, Folder: {1}, messages count: {2}",
-//											new Object[] { st, f, mc });
-//
-//							f = st.getFolder("Inbox/CurrencyRates");
-//							mc = f.getMessageCount();
-//							TRACE
-//									.debugT(
-//											SIGNATURE,
-//											"Store: {0}, Folder: {1}, messages count: {2}",
-//											new Object[] { st, f, mc });
-//
-//							Binding b = CPAFactory.getInstance()
-//									.getLookupManager().getBindingByChannelId(
-//											channel.getObjectId());
-//							Message msg = mf.createMessageRecord(b
-//									.getFromParty(), b.getFromService(), b
-//									.getToParty(), b.getToService(), b
-//									.getActionName(), b.getActionNamespace());
-//							XMLPayload p = msg.createXMLPayload();
-//							p.setContent("<a/>".getBytes());
-//							msg
-//									.setDeliverySemantics(DeliverySemantics.ExactlyOnce);
-//							p.setName("MainDocument");
-//							p
-//									.setDescription("XI AF Sample Adapter Input: XML document as MainDocument");
-//							msg.setDocument(p);
-//
+							// TRACE.warningT(SIGNATURE,
+							// AdapterConstants.lcAF,
+							// "Code for polling Mail Sender @@@");
+							// Session ses = (Session)
+							// ctx.lookup("java:comp/env/mail/MailSession");
+							// TRACE.debugT(SIGNATURE, "Session:" + ses + " "
+							// + ses.getStore().toString());
+							// Store st = ses.getStore("imaps");
+							// st.connect();
+							// Folder f = st.getDefaultFolder();
+							// int mc;
+							// TRACE.debugT(SIGNATURE,
+							// "Store: {0}, Folder: {1},{2}",
+							// new Object[] { st, f, f.getFullName() });
+							//
+							// f = st.getFolder("INBOX");
+							// mc = f.getMessageCount();
+							// TRACE
+							// .debugT(
+							// SIGNATURE,
+							// "Store: {0}, Folder: {1}, messages count: {2}",
+							// new Object[] { st, f, mc });
+							//
+							// f = st.getFolder("INBOX/CurrencyRates");
+							// mc = f.getMessageCount();
+							// TRACE
+							// .debugT(
+							// SIGNATURE,
+							// "Store: {0}, Folder: {1}, messages count: {2}",
+							// new Object[] { st, f, mc });
+							//
+							// f = st.getFolder("Inbox/CurrencyRates");
+							// mc = f.getMessageCount();
+							// TRACE
+							// .debugT(
+							// SIGNATURE,
+							// "Store: {0}, Folder: {1}, messages count: {2}",
+							// new Object[] { st, f, mc });
+							//
+							// Binding b = CPAFactory.getInstance()
+							// .getLookupManager().getBindingByChannelId(
+							// channel.getObjectId());
+							// Message msg = mf.createMessageRecord(b
+							// .getFromParty(), b.getFromService(), b
+							// .getToParty(), b.getToService(), b
+							// .getActionName(), b.getActionNamespace());
+							// XMLPayload p = msg.createXMLPayload();
+							// p.setContent("<a/>".getBytes());
+							// msg
+							// .setDeliverySemantics(DeliverySemantics.ExactlyOnce);
+							// p.setName("MainDocument");
+							// p
+							// .setDescription("XI AF Sample Adapter Input: XML document as MainDocument");
+							// msg.setDocument(p);
+							//
 						} catch (Exception e) {
 							TRACE.catching(SIGNATURE, e);
-							TRACE
-									.errorT(
-											SIGNATURE,
-											AdapterConstants.lcAF,
-											"Cannot send message to channel {0}. Received exception: {1}",
-											new Object[] {
-													channel.getObjectId(),
-													e.getMessage() });
+							TRACE.errorT(SIGNATURE, XIConst.lcAF, "Cannot send message to channel {0}. Received exception: {1}", new Object[] {
+									channel.getObjectId(), e.getMessage() });
 						}
 					}
 				} catch (Exception e) {
 					TRACE.catching(SIGNATURE, e);
-					TRACE.errorT(SIGNATURE, AdapterConstants.lcAF,
-							"SOA.apt_sample.0019",
-							"Cannot access inbound channel configuration. Received exception: "
-									+ e.getMessage());
+					TRACE.errorT(SIGNATURE, XIConst.lcAF, "", "Cannot access inbound channel configuration. Received exception: "
+							+ e.getMessage());
 				}
 				try {
 					synchronized (this) {
@@ -601,21 +527,17 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 					}
 				} catch (InterruptedException e1) {
 					TRACE.catching(SIGNATURE, e1);
-					TRACE.errorT(SIGNATURE, AdapterConstants.lcAF,
-							"SOA.apt_sample.0020",
-							"Inbound thread stopped. Received exception during wait period: "
-									+ e1.getMessage());
+					TRACE.errorT(SIGNATURE, XIConst.lcAF, "", "Inbound thread stopped. Received exception during wait period: "
+							+ e1.getMessage());
 					threadStatus = 2;
 				}
 			}
 		} catch (NamingException e) {
 			TRACE.catching(SIGNATURE, e);
-			TRACE.errorT(SIGNATURE, AdapterConstants.lcAF, "Can't get parameters");
+			TRACE.errorT(SIGNATURE, XIConst.lcAF, "Can't get parameters");
 		} finally {
 			Thread.currentThread().setName(oldThreadName);
-			TRACE.debugT(SIGNATURE, AdapterConstants.lcAF,
-					"Switched thread name back to: {0}",
-					new Object[] { oldThreadName });
+			TRACE.debugT(SIGNATURE, XIConst.lcAF, "Switched thread name back to: {0}", new Object[] { oldThreadName });
 		}
 	}
 
@@ -624,11 +546,9 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 			String channelAddressMode, boolean set_asma) {
 		String SIGNATURE = "sendMessageFromFile(String inFileName)";
 		String msgText = new String();
-
 		File inputFile = null;
 		String channelId = null;
 		String xiMsgId = null;
-
 		// boolean fileRead = true;
 		// try
 		// {
@@ -643,7 +563,7 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 		// {
 		// TRACE.catching("sendMessageFromFile(String inFileName)", e);
 		// TRACE.errorT("sendMessageFromFile(String inFileName)",
-		// MCAConstants.LogCategoryCONNECT_AF, "SOA.apt_sample.0021",
+		// MCAConstants.LogCategoryCONNECT_AF, "",
 		// "Input file "
 		// + inFileName + " attributes cannot be read. Received exception: " +
 		// e.getMessage());
@@ -702,7 +622,7 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 		// {
 		// TRACE.catching("sendMessageFromFile(String inFileName)", e);
 		// TRACE.errorT("sendMessageFromFile(String inFileName)",
-		// MCAConstants.LogCategoryCONNECT_AF, "SOA.apt_sample.0022",
+		// MCAConstants.LogCategoryCONNECT_AF, "",
 		// "Input file "
 		// + inFileName + " cannot be opened. Retry in " +
 		// Integer.toString(waitTime) + " milliseconds!" +
@@ -842,7 +762,7 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 				// else
 				// {
 				// TRACE.errorT("sendMessageFromFile(String inFileName)",
-				// MCAConstants.LogCategoryCONNECT_AF, "SOA.apt_sample.0023",
+				// MCAConstants.LogCategoryCONNECT_AF, "",
 				// "The channel ID cannot be determined. Reason: No agreement (binding) for the FP,TP,FS,TS,A combination available. Message will be processed later!");
 				// return;
 				// }
@@ -875,14 +795,11 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 				// MCAConstants.LogCategoryCONNECT_AF, "The channel ID is: " +
 				// channelId);
 				//        
-
-				Message msg = mf.createMessageRecord("TNF", "SVNSI_D", "", "",
-						"AA", "urn:AA");
+				Message msg = mf.createMessageRecord("TNF", "SVNSI_D", "", "", "AA", "urn:AA");
 				if (qos.equalsIgnoreCase("BE")) {
 					msg.setDeliverySemantics(DeliverySemantics.BestEffort);
 				} else if (qos.equalsIgnoreCase("EOIO")) {
-					msg
-							.setDeliverySemantics(DeliverySemantics.ExactlyOnceInOrder);
+					msg.setDeliverySemantics(DeliverySemantics.ExactlyOnceInOrder);
 				} else {
 					msg.setDeliverySemantics(DeliverySemantics.ExactlyOnce);
 				}
@@ -890,38 +807,21 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 				if (msgText.indexOf("<?xml") != -1) {
 					xp.setText(msgText);
 					xp.setName("MainDocument");
-					xp
-							.setDescription("XI AF Sample Adapter Input: XML document as MainDocument");
+					xp.setDescription("XI AF Sample Adapter Input: XML document as MainDocument");
 				} else {
 					xp.setContent(msgText.getBytes("UTF-8"));
 					xp.setContentType("application/octet-stream");
 					xp.setName("MainDocument");
-					xp
-							.setDescription("XI AF Sample Adapter Input: Binary as MainDocument");
+					xp.setDescription("XI AF Sample Adapter Input: Binary as MainDocument");
 				}
 				if (set_asma) {
-					msg.setMessageProperty(
-							adapterNamespace + "/" + adapterType,
-							"JCAChannelID", channelId);
-					TRACE
-							.debugT(
-									SIGNATURE,
-									AdapterConstants.lcAF,
-									"The adapter specific message attribute (ASMA) {0} was set.",
-									new Object[] { "JCAChannelID" });
+					msg.setMessageProperty(adapterNamespace + "/" + adapterType, "JCAChannelID", channelId);
+					TRACE.debugT(SIGNATURE, XIConst.lcAF, "The adapter specific message attribute (ASMA) {0} was set.", new Object[] { "JCAChannelID" });
 				} else {
-					TRACE
-							.debugT(
-									SIGNATURE,
-									AdapterConstants.lcAF,
-									"The adapter specific message attribute (ASMA) {0} was not set since the setting is switched off in the channel configuration.",
-									new Object[] { "JCAChannelID" });
+					TRACE.debugT(SIGNATURE, XIConst.lcAF, "The adapter specific message attribute (ASMA) {0} was not set since the setting is switched off in the channel configuration.", new Object[] { "JCAChannelID" });
 				}
 				msg.setDocument(xp);
-
-				TRACE.debugT(SIGNATURE, AdapterConstants.lcAF,
-						"Message object created and filled.");
-
+				TRACE.debugT(SIGNATURE, XIConst.lcAF, "Message object created and filled.");
 				ModuleData md = new ModuleData();
 				md.setPrincipalData(msg);
 				if (!qos.equalsIgnoreCase("BE")) {
@@ -1025,7 +925,7 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 					// TRACE.catching(SIGNATURE, e);
 					// TRACE.errorT(SIGNATURE,
 					// MCAConstants.LogCategoryCONNECT_AF,
-					// "SOA.apt_sample.0024",
+					// "",
 					// "Process state propagation failed due to: {0}", new
 					// Object[] { e.getMessage() });
 					// }
@@ -1043,7 +943,7 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 					//
 					// TRACE.errorT(SIGNATURE,
 					// MCAConstants.LogCategoryCONNECT_AF,
-					// "SOA.apt_sample.0025",
+					// "",
 					// "Rollback was performed explicitly!. Reason: {0}. Message will be processed again later.",
 					// new Object[] { e.getMessage() });
 					// } catch (TxException e) {
@@ -1051,7 +951,7 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 					//
 					// TRACE.errorT(SIGNATURE,
 					// MCAConstants.LogCategoryCONNECT_AF,
-					// "SOA.apt_sample.0026",
+					// "",
 					// "Internal transaction manager exception received. Rollback is performed!. Reason: {0}. Message will be processed again later.",
 					// new Object[] { e.getMessage() });
 					// } catch (Exception e) {
@@ -1059,7 +959,7 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 					//
 					// TRACE.errorT(SIGNATURE,
 					// MCAConstants.LogCategoryCONNECT_AF,
-					// "SOA.apt_sample.0027",
+					// "",
 					// "Inbound processing failed, transaction is being rollback'ed. Reason: {0}.Message will be processed again later.",
 					// new Object[] { e.getMessage() });
 					// TxManager.setRollbackOnly();
@@ -1067,7 +967,7 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 					// if (txTicket == null) {
 					// TRACE.errorT(SIGNATURE,
 					// MCAConstants.LogCategoryCONNECT_AF,
-					// "SOA.apt_sample.0028",
+					// "",
 					// "Got no valid transaction ticket (was null).");
 					// } else {
 					// TRACE.debugT(SIGNATURE,
@@ -1078,7 +978,7 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 					// } catch (Exception e) {
 					// TRACE.errorT(SIGNATURE,
 					// MCAConstants.LogCategoryCONNECT_AF,
-					// "SOA.apt_sample.0029",
+					// "",
 					// "Internal transaction manager exception received. Rollback is performed!. Reason: {0}. Message will be processed again later.",
 					// new Object[] { e.getMessage() });
 					// }
@@ -1152,7 +1052,7 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 					// } else {
 					// TRACE.errorT(SIGNATURE,
 					// MCAConstants.LogCategoryCONNECT_AF,
-					// "SOA.apt_sample.0030",
+					// "",
 					// "Received not a XI message as response. Class is: {0}",
 					// new Object[] { principal.getClass().getName() });
 					// }
@@ -1163,16 +1063,15 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 					// TRACE.catching(SIGNATURE, e);
 					// TRACE.errorT(SIGNATURE,
 					// MCAConstants.LogCategoryCONNECT_AF,
-					// "SOA.apt_sample.0031",
+					// "",
 					// "Synchronous inbound processing failed. Received exception: "
 					// + e.getMessage());
 					// }
 				}
 			} catch (Exception e) {
 				TRACE.catching(SIGNATURE, e);
-				TRACE.errorT(SIGNATURE, AdapterConstants.lcAF,
-						"SOA.apt_sample.0032", "Received exception: "
-								+ e.getMessage());
+				TRACE.errorT(SIGNATURE, XIConst.lcAF, "", "Received exception: "
+						+ e.getMessage());
 			}
 		}
 	}
@@ -1189,7 +1088,6 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 	// }
 	// return extMsgId;
 	// }
-
 	// private void renameFile(String inFileName, File inputFile)
 	// throws Exception
 	// {
@@ -1200,7 +1098,7 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 	// renamed.delete();
 	// if (false == inputFile.renameTo(renamed)) {
 	// TRACE.errorT("renameFile(String inFileName, File inputFile)",
-	// MCAConstants.LogCategoryCONNECT_AF, "SOA.apt_sample.0033", "Input file "
+	// MCAConstants.LogCategoryCONNECT_AF, "", "Input file "
 	// +
 	// inFileName + " cannot be renamed. It will be sent again!");
 	// }
@@ -1209,14 +1107,13 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 	// {
 	// TRACE.catching("renameFile(String inFileName, File inputFile)", e);
 	// TRACE.errorT("renameFile(String inFileName, File inputFile)",
-	// MCAConstants.LogCategoryCONNECT_AF, "SOA.apt_sample.0034", "Input file "
+	// MCAConstants.LogCategoryCONNECT_AF, "", "Input file "
 	// +
 	// inFileName + " cannot be renamed. Received exception: " +
 	// e.getMessage());
 	// throw e;
 	// }
 	// }
-
 	// private String findValue(String key, String text) {
 	// String SIGNATURE = "findValue(String key, String text)";
 	// int startIndex = text.indexOf(key);
@@ -1236,7 +1133,6 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 	// Integer.toString(endIndex));
 	// return value;
 	// }
-
 	public String getAdapterNamespace() {
 		String SIGNATURE = "getAdapterNamespace()";
 		TRACE.entering(SIGNATURE);
@@ -1248,82 +1144,60 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 		return adapterType;
 	}
 
-	public void setAdapterNamespace(String adapterNamespace) {
-		String SIGNATURE = "setAdapterNamespace(String adapterNamespace)";
-		TRACE.entering(SIGNATURE, new Object[] { adapterNamespace });
-		this.adapterNamespace = adapterNamespace;
-		TRACE.exiting(SIGNATURE);
-	}
+//	public void setAdapterNamespace(String adapterNamespace) {
+//		String SIGNATURE = "setAdapterNamespace(String adapterNamespace)";
+//		TRACE.entering(SIGNATURE, new Object[] { adapterNamespace });
+//		this.adapterNamespace = adapterNamespace;
+//		TRACE.exiting(SIGNATURE);
+//	}
 
-	public void setAdapterType(String adapterType) {
-		String SIGNATURE = "setAdapterType(String adapterType)";
-		TRACE.entering(SIGNATURE, new Object[] { adapterType });
-		this.adapterType = adapterType;
-		TRACE.exiting(SIGNATURE);
-	}
+//	public void setAdapterType(String adapterType) {
+//		String SIGNATURE = "setAdapterType(String adapterType)";
+//		TRACE.entering(SIGNATURE, new Object[] { adapterType });
+//		this.adapterType = adapterType;
+//		TRACE.exiting(SIGNATURE);
+//	}
 
 	public GUID getMcfLocalGuid() {
-		return utl.mcfLocalGuid;
+		return mcfLocalGuid;
 	}
 
 	public void start() {
 		String SIGNATURE = "start()";
-		TRACE.entering(SIGNATURE);
+		TRACE.entering(SIGNATURE, nickGuid);
 		String controlledMcfGuid = getMcfLocalGuid().toHexString();
-		TRACE.infoT(SIGNATURE, AdapterConstants.lcAF,
-				"MCF with GUID {0} is started now. ({1})", new Object[] {
-						controlledMcfGuid.toString(),
-						SPIManagedConnectionFactory.class.getClassLoader() });
+		TRACE.infoT(SIGNATURE, XIConst.lcAF, "MCF with GUID {0} is started now. ({1})", new Object[] {
+				controlledMcfGuid.toString(),
+				SPIManagedConnectionFactory.class.getClassLoader() });
 		try {
-			audit = PublicAPIAccessFactory.getPublicAPIAccess()
-					.getAuditAccess();
+			audit = PublicAPIAccessFactory.getPublicAPIAccess().getAuditAccess();
 		} catch (Exception e) {
 			TRACE.catching(SIGNATURE, e);
-			TRACE
-					.errorT(
-							SIGNATURE,
-							AdapterConstants.lcConnect,
-							"SOA.apt_sample.0035",
-							"Unable to access the XI AF audit log. Reason: {0}. Adapter cannot not start the inbound processing!",
-							new Object[] { e });
-			TRACE.exiting(SIGNATURE);
+			TRACE.errorT(SIGNATURE, XIConst.lcConnect, "", "Unable to access the XI AF audit log. Reason: {0}. Adapter cannot not start the inbound processing!", new Object[] { e });
+			TRACE.exiting(SIGNATURE, nickGuid);
 			return;
 		}
 		messageIDMapper = MessageIDMapper.getInstance();
 		if (messageIDMapper == null) {
-			TRACE
-					.errorT(
-							SIGNATURE,
-							AdapterConstants.lcConnect,
-							"SOA.apt_sample.0036",
-							"Gut null as MessageIDMapper singleton instance. Adapter cannot not start the inbound processing!");
-			TRACE.exiting(SIGNATURE);
+			TRACE.errorT(SIGNATURE, XIConst.lcConnect, "", "Gut null as MessageIDMapper singleton instance. Adapter cannot not start the inbound processing!");
+			TRACE.exiting(SIGNATURE, nickGuid);
 			return;
 		}
 		try {
 			mf = new XIMessageFactoryImpl(adapterType, adapterNamespace);
 		} catch (Exception e) {
 			TRACE.catching(SIGNATURE, e);
-			TRACE
-					.errorT(
-							SIGNATURE,
-							AdapterConstants.lcConnect,
-							"SOA.apt_sample.0037",
-							"Unable to create XI message factory. Adapter cannot not start the inbound processing!");
-			TRACE.exiting(SIGNATURE);
+			TRACE.errorT(SIGNATURE, XIConst.lcConnect, "", "Unable to create XI message factory. Adapter cannot not start the inbound processing!");
+			TRACE.exiting(SIGNATURE, nickGuid);
 			return;
 		}
 		try {
 			startMCF();
-			startTimer();
-			TRACE.infoT(SIGNATURE, AdapterConstants.lcAF,
-					"MCF with GUID {0} was started successfully.",
-					new Object[] { controlledMcfGuid.toString() });
+			startTimer123();
+			TRACE.infoT(SIGNATURE, XIConst.lcAF, "MCF with GUID {0} was started successfully.", new Object[] { controlledMcfGuid.toString() });
 		} catch (Exception e) {
 			TRACE.catching(SIGNATURE, e);
-			TRACE.errorT(SIGNATURE, AdapterConstants.lcAF,
-					"SOA.apt_sample.0038", "Start of MCF failed. Reason: {0}",
-					new Object[] { e.getMessage() });
+			TRACE.errorT(SIGNATURE, XIConst.lcAF, "", "Start of MCF failed. Reason: {0}", new Object[] { e.getMessage() });
 		}
 		// try
 		// {
@@ -1334,89 +1208,96 @@ public class SPIManagedConnectionFactory implements ManagedConnectionFactory,
 		// {
 		// TRACE.catching("start()", e);
 		// TRACE.errorT("start()", MCAConstants.LogCategoryCONNECT_AF,
-		// "SOA.apt_sample.0039",
+		// "",
 		// "Unable to register pojo modules. Reason: {0}", new Object[] {
 		// e.getMessage() });
 		// }
-		TRACE.exiting(SIGNATURE);
+		TRACE.exiting(SIGNATURE, nickGuid);
 	}
 
 	public void stop() {
 		String SIGNATURE = "stop()";
-		TRACE.entering(SIGNATURE);
+		TRACE.entering(SIGNATURE, nickGuid);
 		String controlledMcfGuid = getMcfLocalGuid().toHexString();
-		TRACE.infoT(SIGNATURE, AdapterConstants.lcAF,
-				"The running MCF with GUID {0} will be stopped now",
-				new Object[] { controlledMcfGuid.toString() });
-
+		TRACE.infoT(SIGNATURE, XIConst.lcAF, "The running MCF with GUID {0} will be stopped now", new Object[] { controlledMcfGuid.toString() });
 		// ClassUtil.removeClassLoader("com.sap.aii.af.sample.module.ConvertCRLFfromToLF0");
 		try {
 			stopMCF();
-			stopTimer();
+			stopTimer123();
 		} catch (Exception e) {
 			TRACE.catching(SIGNATURE, e);
 		}
-		TRACE.infoT(SIGNATURE, AdapterConstants.lcAF,
-				"MCF with GUID {0} was stopped successfully.",
-				new Object[] { controlledMcfGuid.toString() });
-		TRACE.exiting(SIGNATURE);
+		TRACE.infoT(SIGNATURE, XIConst.lcAF, "MCF with GUID {0} was stopped successfully.", new Object[] { controlledMcfGuid.toString() });
+		TRACE.exiting(SIGNATURE, nickGuid);
 	}
 
 	public boolean isRunning() {
-		if (threadStatus == 1) {
-			return true;
-		}
+		if (threadStatus == 1) { return true; }
 		return false;
 	}
+
+	static String generateNick() {
+		String[] adj = {"flying", "going", "running", "fast", "slow"};
+		String[] beings = {"Mammoth", "Giraffe", "Hare", "Ocelote", "Elementale"};
+		String[] media = {"_", "-", "~"};
+		int x1 = (int)Math.round(Math.random() * adj.length);
+		int x2 = (int)Math.round(Math.random() * beings.length);
+		int x3 = (int)Math.round(Math.random() * media.length);
+		String r = adj[Math.min(x1, adj.length-1)] + media[Math.min(x3, media.length-1)] + beings[Math.min(x2, beings.length-1)]; 
+		return r;
+	}
+//	String nickGuid() {
+//		return nickName + "/" + mcfLocalGuid;
+//	}
 }
 
-class XIManagedConnectionFactoryController extends TimerTask {
-	private static final Trace TRACE = new Trace(
-			XIManagedConnectionFactoryController.class.getName());
-	private SPIManagedConnectionFactory controlledMcf;
+// Выполняется даже если нет каналов
+class XIMCFController extends TimerTask {
+	private static final Trace TR = new Trace(XIMCFController.class.getName());
+	private SPIManagedConnectionFactory parentMcf = null;
 
-	public XIManagedConnectionFactoryController(
-			SPIManagedConnectionFactory mcf, InitialContext ctx) {
-		controlledMcf = mcf;
+	public XIMCFController(SPIManagedConnectionFactory mcf, InitialContext ctx) {
+		parentMcf = mcf;
+		String n = Thread.currentThread().getName();
+		Thread.currentThread().setName(n + "-"+ parentMcf.adapterType);
 	}
 
 	public void run() {
-		String SIGNATURE = "XIManagedConnectionFactoryController.run()";
-		TRACE.entering(SIGNATURE);
-		String controlledMcfGuid = null;
-		try {
-			if (controlledMcf != null) {
-				controlledMcfGuid = controlledMcf.getMcfLocalGuid()
-						.toHexString();
+		String SIGNATURE = "XIMCFController.run()";
+		TR.entering(SIGNATURE);
+		String controlledMcfGuid = parentMcf.getMcfLocalGuid().toHexString();
+		if (parentMcf.threadStatus==2) {
+			TR.debugT(SIGNATURE, XIConst.lcAF, "Attempt to cancel TimerTask");
+			this.cancel();
+		} else {
+			try {
+				TR.debugT(SIGNATURE, XIConst.lcAF, "MCF with GUID {0} is running. ({1})", new Object[] {
+						controlledMcfGuid.toString(),
+						XIMCFController.class.getClassLoader() });
+			} catch (Exception e) {
+				TR.catching(SIGNATURE, e);
+				TR.warningT(SIGNATURE, XIConst.lcAF, "Processing of control timer failed. Reason: "
+						+ e.getMessage());
 			}
-			TRACE.debugT(SIGNATURE, AdapterConstants.lcAF,
-					"MCF with GUID {0} is running. ({1})", new Object[] {
-							controlledMcfGuid.toString(),
-							XIManagedConnectionFactoryController.class
-									.getClassLoader() });
-
-		} catch (Exception e) {
-			TRACE.catching(SIGNATURE, e);
-			TRACE.warningT(SIGNATURE, AdapterConstants.lcAF,
-					"Processing of control timer failed. Reason: "
-							+ e.getMessage());
 		}
-		TRACE.exiting(SIGNATURE);
+		TR.exiting(SIGNATURE);
 	}
 }
-
-
-//InitialContext b = new InitialContext();
-//ApplicationPropertiesAccess appCfgProps = (ApplicationPropertiesAccess)b.lookup("ApplicationConfiguration");
-////appCfgProps = (ApplicationPropertiesAccess)this.ctx.lookup("ApplicationConfiguration"); 
-//Properties appProps = appCfgProps.getApplicationProperties();
-//if (appProps!=null)
-//	TRACE.fatalT(SIGNATURE, "!null.username=" + appProps.getProperty("null.username"));
-//else {
-//	appProps = appCfgProps.getSystemProfile();
-//	StringBuilder sb = new StringBuilder();
-//	for (Object z: appProps.keySet()) {
-//		sb.append((String)z + "=" + appProps.getProperty((String)z) + ";\n");
-//	}
-//	TRACE.fatalT(SIGNATURE, "!Can't get properties. appCfgProps="+appCfgProps + ";\n system=" + sb.toString());
-//}
+// InitialContext b = new InitialContext();
+// ApplicationPropertiesAccess appCfgProps =
+// (ApplicationPropertiesAccess)b.lookup("ApplicationConfiguration");
+// //appCfgProps =
+// (ApplicationPropertiesAccess)this.ctx.lookup("ApplicationConfiguration");
+// Properties appProps = appCfgProps.getApplicationProperties();
+// if (appProps!=null)
+// TRACE.fatalT(SIGNATURE, "!null.username=" +
+// appProps.getProperty("null.username"));
+// else {
+// appProps = appCfgProps.getSystemProfile();
+// StringBuilder sb = new StringBuilder();
+// for (Object z: appProps.keySet()) {
+// sb.append((String)z + "=" + appProps.getProperty((String)z) + ";\n");
+// }
+// TRACE.fatalT(SIGNATURE, "!Can't get properties. appCfgProps="+appCfgProps +
+// ";\n system=" + sb.toString());
+// }

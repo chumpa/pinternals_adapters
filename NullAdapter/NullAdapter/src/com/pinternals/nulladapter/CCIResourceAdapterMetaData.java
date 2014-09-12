@@ -5,11 +5,11 @@ import com.sap.aii.af.lib.trace.Trace;
 
 public class CCIResourceAdapterMetaData implements ResourceAdapterMetaData {
 	private static final Trace TRACE = new Trace(CCIResourceAdapterMetaData.class.getName());
-	private String vendorName = AdapterConstants.vendor;
-	private String adapterVersion = AdapterConstants.version;
-	private String specVersion = AdapterConstants.spec_version;
-	private String adapterName = AdapterConstants.ADAPTER_TYPE;
-	private String description = AdapterConstants.ADAPTER_DESC;
+	private String vendorName = XIConst.vendor;
+	private String adapterVersion = XIConst.version;
+	private String specVersion = XIConst.spec_version;
+	private String adapterName = XIConst.ADAPTER_TYPE;
+	private String description = XIConst.ADAPTER_DESC;
 
 	public String getAdapterVersion() {
 		return this.adapterVersion;

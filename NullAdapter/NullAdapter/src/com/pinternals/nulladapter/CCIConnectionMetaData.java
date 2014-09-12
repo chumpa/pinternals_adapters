@@ -8,7 +8,7 @@ import com.sap.aii.af.lib.trace.Trace;
 public class CCIConnectionMetaData implements ConnectionMetaData {
 	private static final Trace TRACE = new Trace(CCIConnectionMetaData.class.getName());
 	private SPIManagedConnection mc;
-	private static final String version = new String(AdapterConstants.version);
+	private static final String version = new String(XIConst.version);
 	private static final String name = new String("Connection");
 
 	public CCIConnectionMetaData(SPIManagedConnection mc) {

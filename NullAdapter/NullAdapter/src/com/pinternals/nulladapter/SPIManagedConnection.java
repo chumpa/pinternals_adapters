@@ -62,7 +62,7 @@ public class SPIManagedConnection implements ManagedConnection {
 
 		this.connectionSet = new HashSet<Object>();
 		this.cciListener = new XIConnectionEventListenerManager(this);
-		TRACE.infoT(SIGNATURE, AdapterConstants.lcConnect,
+		TRACE.infoT(SIGNATURE, XIConst.lcConnect,
 				"Physical connection, the file, was opened sucessfuly");
 		TRACE.exiting(SIGNATURE);
 	}

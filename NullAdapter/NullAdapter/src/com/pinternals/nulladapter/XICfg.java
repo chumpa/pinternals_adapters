@@ -3,9 +3,7 @@ package com.pinternals.nulladapter;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
-
 import javax.resource.ResourceException;
-
 import com.pinternals.AFUtil;
 import com.sap.aii.af.lib.trace.Trace;
 import com.sap.aii.af.service.administration.api.AdapterCallback;
@@ -17,6 +15,7 @@ import com.sap.aii.af.service.administration.api.cpa.CPALookupManager;
 import com.sap.aii.af.service.administration.api.cpa.ChannelLifecycleCallback;
 import com.sap.aii.af.service.administration.api.i18n.LocalizationCallback;
 import com.sap.aii.af.service.administration.api.i18n.LocalizationNotPossibleException;
+import com.sap.aii.af.service.administration.api.i18n.ResourceBundleLocalizationCallback;
 import com.sap.aii.af.service.administration.api.monitoring.ChannelDirection;
 import com.sap.aii.af.service.administration.api.monitoring.ChannelSelfTestCallback;
 import com.sap.aii.af.service.administration.api.monitoring.ChannelState;
@@ -38,78 +37,67 @@ import com.sap.engine.interfaces.messaging.api.MessageKey;
 
 public class XICfg implements ChannelLifecycleCallback, ChannelStatusCallback,
 		LocalizationCallback, ChannelSelfTestCallback {
-
 	private static final Trace TR = new Trace(XICfg.class.getName());
-	private String adapterType, adapterNamespace;
+	private String aType, aNS;
 	private List<Channel> outboundChannels = null, inboundChannels = null;
 	private CPALookupManager lookupManager = null;
 	private AdapterRegistry adapterRegistry = null;
-	private LocalizationCallback localizer = null;
+	private LocalizationCallback lclzer = null;
 	private SPIManagedConnectionFactory mcf = null;
 
-	public XICfg() {
-		this(AdapterConstants.ADAPTER_TYPE, AdapterConstants.ADAPTER_NAMESPACE);
-	}
-
-	public XICfg(String adapterType, String adapterNamespace) {
-		String SIGNATURE = "XIConfiguration(String adapterType, String adapterNamespace)";
-		TR.entering(SIGNATURE, new Object[] { adapterType, adapterNamespace });
+	// public XICfg() {
+	// this(AdapterConstants.ADAPTER_TYPE, AdapterConstants.ADAPTER_NS);
+	// String SIGNATURE = "XICfg()";
+	// TR.debugT(SIGNATURE, "empty constructor was called");
+	// }
+	public XICfg(String adType, String adNS) {
+		String SIGNATURE = "XICfg(String adType, String adNS)";
+		TR.entering(SIGNATURE, new Object[] { adType, adNS });
 		try {
 			CPAFactory cf = CPAFactory.getInstance();
 			this.lookupManager = cf.getLookupManager();
 		} catch (Exception e) {
 			TR.catching(SIGNATURE, e);
-			TR.errorT(SIGNATURE, AdapterConstants.lcConfig,
-					"SOA.apt_sample.0040",
-					"CPALookupManager cannot be instantiated due to {0}",
-					new Object[] { e.getMessage() });
-			TR
-					.errorT(SIGNATURE, AdapterConstants.lcConfig,
-							"SOA.apt_sample.0041",
-							"No channel configuration can be read, no message exchange possible!");
+			TR.errorT(SIGNATURE, XIConst.lcConfig, "", "CPALookupManager cannot be instantiated due to {0}", new Object[] { e.getMessage() });
+			TR.errorT(SIGNATURE, XIConst.lcConfig, "", "No channel configuration can be read, no message exchange possible!");
 		}
-		this.adapterType = adapterType;
-		this.adapterNamespace = adapterNamespace;
+		this.aType = adType;
+		this.aNS = adNS;
 		TR.exiting(SIGNATURE);
 	}
 
+	@Override
 	// @ChannelLifecycleCallback
 	public void channelAdded(Channel ch) {
 		String SIGNATURE = "channelAdded(Channel ch)";
 		TR.entering(SIGNATURE, new Object[] { ch });
-
 		Direction d = ch.getDirection();
 		synchronized (this) {
 			if (d == Direction.INBOUND)
 				this.inboundChannels.add(ch);
-			else if (d == Direction.OUTBOUND)
-				this.outboundChannels.add(ch);
+			else if (d == Direction.OUTBOUND) this.outboundChannels.add(ch);
 		}
-
-		TR.infoT(SIGNATURE, AdapterConstants.lcAF, AFUtil.formatCcLong(ch,
-				" was added"));
+		TR.infoT(SIGNATURE, XIConst.lcAF, AFUtil.formatCcLong(ch, " was added"));
 		TR.exiting(SIGNATURE);
 	}
 
+	@Override
 	// @ChannelLifecycleCallback
 	public void channelUpdated(Channel channel) {
 		String SIGNATURE = "channelUpdated(Channel channel)";
 		TR.entering(SIGNATURE);
-
 		channelRemoved(channel);
 		channelAdded(channel);
 		TR.exiting(SIGNATURE);
 	}
 
+	@Override
 	// @ChannelLifecycleCallback
 	public void channelRemoved(Channel ch) {
 		String SIGNATURE = "channelRemoved(Channel ch)";
 		TR.entering(SIGNATURE, new Object[] { ch });
 		List<Channel> channels = null;
-
-		TR.infoT(SIGNATURE, AdapterConstants.lcAF, AFUtil.formatCcLong(ch,
-				" was removed"));
-
+		TR.infoT(SIGNATURE, XIConst.lcAF, AFUtil.formatCcLong(ch, " was removed"));
 		String channelID = ch.getObjectId();
 		Direction d = ch.getDirection();
 		if (d == Direction.INBOUND) {
@@ -117,23 +105,16 @@ public class XICfg implements ChannelLifecycleCallback, ChannelStatusCallback,
 		} else {
 			channels = this.outboundChannels;
 		}
-
 		synchronized (this) {
 			for (Channel x : channels)
 				if (x.getObjectId().equals(ch.getObjectId())) {
 					channels.remove(x);
-					if (d == Direction.INBOUND)
-						break;
+					if (d == Direction.INBOUND) break;
 					try {
 						this.mcf.destroyManagedConnection(channelID);
 					} catch (Exception e) {
 						TR.catching(SIGNATURE, e);
-						TR
-								.warningT(
-										SIGNATURE,
-										AdapterConstants.lcAF,
-										"The ManagedConnection for channel {0} cannot be destroyed. Configuration update might not work.",
-										new Object[] { channelID });
+						TR.warningT(SIGNATURE, XIConst.lcAF, "The ManagedConnection for channel {0} cannot be destroyed. Configuration update might not work.", new Object[] { channelID });
 					}
 				}
 		}
@@ -142,25 +123,19 @@ public class XICfg implements ChannelLifecycleCallback, ChannelStatusCallback,
 
 	public void init(SPIManagedConnectionFactory mcf) throws ResourceException {
 		String SIGNATURE = "init(mcf)";
-		TR.entering(SIGNATURE);
-
+		TR.entering(SIGNATURE, mcf.nickGuid);
 		String dir = null;
 		String name = null;
 		this.mcf = mcf;
 		try {
-			this.localizer = XILocalizationUtilities2.getLocalizationCallback();
+			this.lclzer = XILocalizer.getLocalizationCallback();
 			AdapterRegistryFactory arf = AdapterRegistryFactory.getInstance();
 			this.adapterRegistry = arf.getAdapterRegistry();
-			this.adapterRegistry
-					.registerAdapter(
-							this.adapterNamespace,
-							this.adapterType,
-							new AdapterCapability[] { AdapterCapability.PUSH_PROCESS_STATUS },
-							new AdapterCallback[] { this });
+			this.adapterRegistry.registerAdapter(this.aNS, this.aType, new AdapterCapability[] { AdapterCapability.PUSH_PROCESS_STATUS }, new AdapterCallback[] { this });
 		} catch (Exception e) {
 			TR.catching(SIGNATURE, e);
-			ResourceException re = new ResourceException(
-					"XI AAM registration failed due to: " + e.getMessage());
+			ResourceException re = new ResourceException("XI AAM registration failed due to: "
+					+ e.getMessage());
 			TR.throwing(SIGNATURE, re);
 			throw re;
 		}
@@ -168,14 +143,10 @@ public class XICfg implements ChannelLifecycleCallback, ChannelStatusCallback,
 			this.inboundChannels = new LinkedList<Channel>();
 			this.outboundChannels = new LinkedList<Channel>();
 			try {
-				List<Channel> allChannels = this.lookupManager
-						.getChannelsByAdapterType(this.adapterType,
-								this.adapterNamespace);
-				TR.debugT(SIGNATURE, AdapterConstants.lcAF,
-						"The XI AAM service returned {0} channels "
-								+ "for adapter type {1} with namespace {2}",
-						new Object[] { new Integer(allChannels.size()),
-								this.adapterType, this.adapterNamespace });
+				List<Channel> allChannels = this.lookupManager.getChannelsByAdapterType(this.aType, this.aNS);
+				TR.debugT(SIGNATURE, XIConst.lcAF, "The XI AAM service returned {0} channels "
+						+ "for adapter type {1} with namespace {2}", new Object[] {
+						new Integer(allChannels.size()), this.aType, this.aNS });
 				for (int i = 0; i < allChannels.size(); i++) {
 					Channel channel = (Channel) allChannels.get(i);
 					if (channel.getDirection() == Direction.INBOUND) {
@@ -190,32 +161,26 @@ public class XICfg implements ChannelLifecycleCallback, ChannelStatusCallback,
 						// dir = channel.getValueAsString("fileOutDir");
 						// name = channel.getValueAsString("fileOutPrefix");
 					}
-					TR
-							.infoT(
-									SIGNATURE,
-									AdapterConstants.lcAF,
-									"Channel with ID {0} for party {1} and service {2"
-											+ "} added (direction is {3}, directory: {4}, name: {5}).",
-									new Object[] { channel.getObjectId(),
-											channel.getParty(),
-											channel.getService(),
-											channel.getDirection().toString(),
-											dir, name });
+					TR.infoT(SIGNATURE, XIConst.lcAF, "Channel with ID {0} for party {1} and service {2"
+							+ "} added (direction is {3}, directory: {4}, name: {5}).", new Object[] {
+							channel.getObjectId(), channel.getParty(),
+							channel.getService(),
+							channel.getDirection().toString(), dir, name });
 				}
 			} catch (Exception e) {
 				TR.catching(SIGNATURE, e);
-				ResourceException re = new ResourceException(
-						"XI CPA lookup failed due to: " + e.getMessage());
+				ResourceException re = new ResourceException("XI CPA lookup failed due to: "
+						+ e.getMessage());
 				TR.throwing(SIGNATURE, re);
 				throw re;
 			}
 		}
-		TR.exiting(SIGNATURE);
+		TR.exiting(SIGNATURE, mcf.nickGuid);
 	}
 
 	public void stop() throws ResourceException {
 		String SIGNATURE = "stop()";
-		TR.entering(SIGNATURE);
+		TR.entering(SIGNATURE, mcf.nickGuid);
 		try {
 			// try
 			// {
@@ -234,16 +199,15 @@ public class XICfg implements ChannelLifecycleCallback, ChannelStatusCallback,
 			// {
 			// TRACE.catching("stop()", e);
 			// }
-			this.adapterRegistry.unregisterAdapter(this.adapterNamespace,
-					this.adapterType);
+			this.adapterRegistry.unregisterAdapter(this.aNS, this.aType);
 		} catch (Exception e) {
 			TR.catching(SIGNATURE, e);
-			ResourceException re = new ResourceException(
-					"XI AAM unregistration failed due to: " + e.getMessage());
+			ResourceException re = new ResourceException("XI AAM unregistration failed due to: "
+					+ e.getMessage());
 			TR.throwing(SIGNATURE, re);
 			throw re;
 		}
-		TR.exiting(SIGNATURE);
+		TR.exiting(SIGNATURE, mcf.nickGuid);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -255,14 +219,11 @@ public class XICfg implements ChannelLifecycleCallback, ChannelStatusCallback,
 		}
 		synchronized (this) {
 			if (direction == Direction.INBOUND) {
-				out = (List<Channel>) ((LinkedList<Channel>) this.inboundChannels)
-						.clone();
+				out = (List<Channel>) ((LinkedList<Channel>) this.inboundChannels).clone();
 			} else if (direction == Direction.OUTBOUND) {
-				out = (List<Channel>) ((LinkedList<Channel>) this.outboundChannels)
-						.clone();
+				out = (List<Channel>) ((LinkedList<Channel>) this.outboundChannels).clone();
 			} else {
-				ResourceException re = new ResourceException(
-						"Direction invalid");
+				ResourceException re = new ResourceException("Direction invalid");
 				TR.throwing(SIGNATURE, re);
 				throw re;
 			}
@@ -274,7 +235,6 @@ public class XICfg implements ChannelLifecycleCallback, ChannelStatusCallback,
 			throws ChannelUnknownException {
 		String SIGNATURE = "getChannelStatus(Channel channel, Locale locale)";
 		TR.entering(SIGNATURE, new Object[] { channel, locale });
-
 		boolean channelFound = false;
 		Channel storedChannel = null;
 		String channelID = "<unknown>";
@@ -300,27 +260,19 @@ public class XICfg implements ChannelLifecycleCallback, ChannelStatusCallback,
 		} catch (Exception e) {
 			TR.catching(SIGNATURE, e);
 			cause = e;
-			TR.errorT(SIGNATURE, AdapterConstants.lcConfig,
-					"SOA.apt_sample.0046", "Channel lookup failed due to {0}.",
-					new Object[] { e.getMessage() });
+			TR.errorT(SIGNATURE, XIConst.lcConfig, "", "Channel lookup failed due to {0}.", new Object[] { e.getMessage() });
 		}
 		if (!channelFound) {
-			ChannelUnknownException cue = new ChannelUnknownException(
-					"Channel with ID " + channelID + " is not known.", cause);
-			TR.errorT(SIGNATURE, AdapterConstants.lcConfig,
-					"SOA.apt_sample.0047", "Channel {0} is not known.",
-					new Object[] { channelID });
+			ChannelUnknownException cue = new ChannelUnknownException("Channel with ID "
+					+ channelID + " is not known.", cause);
+			TR.errorT(SIGNATURE, XIConst.lcConfig, "", "Channel {0} is not known.", new Object[] { channelID });
 			TR.throwing(SIGNATURE, cue);
 			throw cue;
 		}
 		ChannelStatusFactory csf = ChannelStatusFactory.getInstance();
 		if (csf == null) {
-			ChannelUnknownException cue = new ChannelUnknownException(
-					"Internal error: Unable to get instance of ChannelStatusFactory.",
-					cause);
-			TR.errorT(SIGNATURE, AdapterConstants.lcConfig,
-					"SOA.apt_sample.0048",
-					"Unable to get instance of ChannelStatusFactory.");
+			ChannelUnknownException cue = new ChannelUnknownException("Internal error: Unable to get instance of ChannelStatusFactory.", cause);
+			TR.errorT(SIGNATURE, XIConst.lcConfig, "", "Unable to get instance of ChannelStatusFactory.");
 			TR.throwing(SIGNATURE, cue);
 			throw cue;
 		}
@@ -379,23 +331,15 @@ public class XICfg implements ChannelLifecycleCallback, ChannelStatusCallback,
 				// return cs;
 				// }
 			}
-			cs = csf.createChannelStatus(channel, ChannelState.OK,
-					this.localizer.localizeString("CHANNEL_OK", locale));
+			cs = csf.createChannelStatus(channel, ChannelState.OK, this.lclzer.localizeString("CHANNEL_OK", locale));
 			// cs = csf.createChannelStatus(channel, ChannelState.OK,
 			// "CHANNEL_OK!");
 		} catch (Exception e) {
 			TR.catching(SIGNATURE, e);
-			TR
-					.errorT(
-							SIGNATURE,
-							AdapterConstants.lcAF,
-							"SOA.apt_sample.0049",
-							"Cannot retrieve status for channel {0}. Received exception: {1}",
-							new Object[] { channel.getChannelName(),
-									e.getMessage() });
-			cs = csf.createChannelStatus(channel, ChannelState.ERROR,
-					"Cannot retrieve status for this channel due to: "
-							+ e.getMessage());
+			TR.errorT(SIGNATURE, XIConst.lcAF, "", "Cannot retrieve status for channel {0}. Received exception: {1}", new Object[] {
+					channel.getChannelName(), e.getMessage() });
+			cs = csf.createChannelStatus(channel, ChannelState.ERROR, "Cannot retrieve status for this channel due to: "
+					+ e.getMessage());
 			TR.exiting(SIGNATURE, new Object[] { cs });
 			return cs;
 		}
@@ -405,7 +349,7 @@ public class XICfg implements ChannelLifecycleCallback, ChannelStatusCallback,
 
 	public String localizeString(String str, Locale locale)
 			throws LocalizationNotPossibleException {
-		return this.localizer.localizeString(str, locale);
+		return this.lclzer.localizeString(str, locale);
 	}
 
 	@Override
@@ -415,27 +359,18 @@ public class XICfg implements ChannelLifecycleCallback, ChannelStatusCallback,
 		MessageKey pmiid = new MessageKey("", MessageDirection.INBOUND);
 		// Object[] params = new Object[9];
 		// reporter.report(0, params);
-		MonitoringManager mon = MonitoringManagerFactory.getInstance()
-				.getMonitoringManager();
-		mon.reportChannelStatus(adapterNamespace, adapterType, var1,
-				ChannelState.ERROR, "var2");
-
-		ProcessContextFactory.ParamSet ps = ProcessContextFactory.getParamSet()
-				.channel(var1);// message(msg).channel(var1);
-		ProcessContext pc = ProcessContextFactory.getInstance()
-				.createProcessContext(ps);
-		mon.reportProcessStatus(adapterNamespace, adapterType,
-				ChannelDirection.SENDER, ProcessState.ERROR, "zzz!", pc);
-		mon.reportProcessStatus(adapterNamespace, adapterType,
-				ChannelDirection.RECEIVER, ProcessState.FATAL, "xxx!", pc);
-
+		MonitoringManager mon = MonitoringManagerFactory.getInstance().getMonitoringManager();
+		mon.reportChannelStatus(aNS, aType, var1, ChannelState.ERROR, "var2");
+		ProcessContextFactory.ParamSet ps = ProcessContextFactory.getParamSet().channel(var1);// message(msg).channel(var1);
+		ProcessContext pc = ProcessContextFactory.getInstance().createProcessContext(ps);
+		mon.reportProcessStatus(aNS, aType, ChannelDirection.SENDER, ProcessState.ERROR, "zzz!", pc);
+		mon.reportProcessStatus(aNS, aType, ChannelDirection.RECEIVER, ProcessState.FATAL, "xxx!", pc);
 		PMI.invokeAFStatusAgent(pmiid, "0", null, null, "ping");
 		//		
 		// addStatusReportEntry(statusreporter, 0, pmiid, false, xiinfo,
 		// "ZZZ!!!");
 		return null;
 	}
-
 	// public boolean channelActiveTest(TestSuitResult suite) {
 	// boolean bActive = false;
 	// ClusterChannelRuntimeStatus channelStatus = null;
@@ -460,5 +395,12 @@ public class XICfg implements ChannelLifecycleCallback, ChannelStatusCallback,
 	// }
 	// return bActive;
 	// }
+}
 
+class XILocalizer {
+	static ResourceBundleLocalizationCallback RBC = new ResourceBundleLocalizationCallback(XIConst.rbName, XILocalizer.class.getClassLoader());
+
+	public static LocalizationCallback getLocalizationCallback() {
+		return RBC;
+	}
 }
